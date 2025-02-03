@@ -3,9 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro</title>
+    <title>Karaoke Player Pro v2.1 </title>
     <style>
+
+.queue-item {
+    position: relative;
+    padding: 15px;
+    margin: 12px 0;
+    background: #2a2a2a;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.remove-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}   
         
+        /* Add mobile-specific styles */
+@media (hover: none) and (pointer: coarse) {
+    #voice-search {
+        padding: 12px;
+        font-size: 1.2em;
+    }
+    
+    .search-result button {
+        padding: 12px;
+        font-size: 1em;
+    }
+}
+
+/* Add status toast styling */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 0.9em;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
         /* Add subtle animation for voice search */
         @keyframes voice-active {
             0% { background-color: #007bff; }
@@ -193,6 +254,12 @@
 
         let wasPlaying = false;
         let originalVolume = 100;
+
+        // Add these variables at the top
+        let audioContext;
+        let sourceNode;
+        let gainNode;
+        let resumeTimeout;
 
 
         // Add to existing variables
@@ -472,60 +539,87 @@ async function handleUnavailableVideo(errorIndex) {
         }
     }
 
-        function updateQueueDisplay() {
-            const container = document.getElementById('queue-list');
-            container.innerHTML = queue.map((video, index) => `
-                <div class="queue-item">
-                    ${index === 0 ? 
-                        `<strong>🎶 Now Playing:</strong> ${video.title}` : 
-                        `<strong>#${index} Up Next:</strong> ${video.title}`}
-                </div>
-            `).join('');
+        // Modified updateQueueDisplay function
+function updateQueueDisplay() {
+    const container = document.getElementById('queue-list');
+    container.innerHTML = queue.map((video, index) => `
+        <div class="queue-item">
+            <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
+            ${index === 0 ? 
+                `<strong>🎶 Now Playing:</strong> ${video.title}` : 
+                `<strong>#${index} Up Next:</strong> ${video.title}`}
+        </div>
+    `).join('');
+}
+
+// Add new remove function
+function removeFromQueue(index) {
+    if (index === 0 && queue.length > 0) {
+        // If removing current playing video
+        queue.shift();
+        if (queue.length > 0) {
+            playVideo(queue[0]);
+        } else {
+            currentVideo = null;
+            showSuggestions();
         }
+    } else {
+        queue.splice(index, 1);
+    }
+    updateQueueDisplay();
+}
 
         // Voice Search Implementation
         // Modified voice search initialization
+// Modified voice search initialization
 function initializeVoiceSearch() {
     if ('webkitSpeechRecognition' in window) {
         const recognition = new webkitSpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
 
-        recognition.onstart = () => {
-            // Store playback state and volume
-            wasPlaying = player.getPlayerState() === YT.PlayerState.PLAYING;
-            originalVolume = player.getVolume();
-            
-            // Duck audio to 10% volume
-            player.setVolume(10);
-            
-            // Maintain playback if paused by TV browser
-            if (wasPlaying) {
-                setTimeout(() => {
-                    try {
-                        player.playVideo();
-                        player.setVolume(10);
-                    } catch (e) {
-                        console.log('Playback maintenance failed');
-                    }
-                }, 300); // Adjust timing based on TV response
-            }
-        };
+        // Initialize Web Audio API
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            gainNode = audioContext.createGain();
+            gainNode.connect(audioContext.destination);
+        } catch (e) {
+            console.log('Web Audio API not supported');
+        }
+
+        recognition.onstart = async () => {
+    wasPlaying = player.getPlayerState() === YT.PlayerState.PLAYING;
+    originalVolume = player.getVolume(); // Store original volume
+    
+    // Reduce volume by 20% (e.g., 100% → 80%, 50% → 40%)
+    const reducedVolume = Math.max(originalVolume * 0.8, 20); // Never go below 20%
+    
+    // Web Audio API version (if available)
+    if (sourceNode && gainNode) {
+        gainNode.gain.setValueAtTime(0.8, audioContext.currentTime); // 0.8 = 80% volume
+    } 
+    // Fallback for browsers without Web Audio API
+    else {
+        player.setVolume(reducedVolume);
+    }
+    
+    schedulePlaybackResume();
+};
 
         recognition.onresult = (event) => {
+            cleanupVoiceSearch();
             const transcript = event.results[0][0].transcript;
-            document.getElementById('search-input').value = transcript;
-            restorePlaybackState();
+            const searchInput = document.getElementById('search-input');
+            searchInput.value = transcript;
+            
+            // Automatically trigger search
+            setTimeout(() => {
+                document.getElementById('search-form').dispatchEvent(new Event('submit'));
+            }, 300); // Short delay to ensure input is updated
         };
 
-        recognition.onerror = (event) => {
-            console.error('Voice recognition error:', event.error);
-            restorePlaybackState();
-        };
-
-        recognition.onend = () => {
-            restorePlaybackState();
-        };
+        recognition.onerror = cleanupVoiceSearch;
+        recognition.onend = cleanupVoiceSearch;
 
         document.getElementById('voice-search').addEventListener('click', () => {
             recognition.start();
@@ -534,6 +628,63 @@ function initializeVoiceSearch() {
         document.getElementById('voice-search').disabled = true;
     }
 }
+
+// Add new cleanup function
+function cleanupVoiceSearch() {
+
+    // Web Audio API restoration
+    if (sourceNode && gainNode) {
+        gainNode.gain.setValueAtTime(1.0, audioContext.currentTime); // Restore to 100%
+    }
+    // Fallback restoration
+    else {
+        player.setVolume(originalVolume); // Restore to stored original volume
+    }
+
+    // Restore audio
+    if (sourceNode && gainNode) {
+        gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
+    } else {
+        player.setVolume(100);
+    }
+    
+    // Clear any existing timeouts
+    clearTimeout(resumeTimeout);
+    
+    // Remove hidden audio elements
+    document.querySelectorAll('audio[data-voice-audio]').forEach(el => el.remove());
+    
+    // Restore playback state
+    if (wasPlaying) {
+        resumeTimeout = setTimeout(() => {
+            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                player.playVideo();
+                showToast('Resuming playback...');
+            }
+        }, getResumeDelay());
+    }
+}
+
+// Add device-specific resume delay
+function getResumeDelay() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    return isMobile ? 1000 : 500; // Longer delay for mobile devices
+}
+
+// Add scheduled playback maintenance
+function schedulePlaybackResume() {
+    const checkInterval = setInterval(() => {
+        if (player.getPlayerState() === YT.PlayerState.PAUSED) {
+            player.playVideo().catch(() => {
+                clearInterval(checkInterval);
+            });
+        }
+    }, 300);
+
+    // Stop checking after 5 seconds
+    setTimeout(() => clearInterval(checkInterval), 5000);
+}
+
 
 // Add restoration function
 function restorePlaybackState() {
@@ -555,18 +706,22 @@ function restorePlaybackState() {
     document.getElementById('voice-search').style.backgroundColor = '#007bff';
 }
 
-// Add to player initialization
+// Modified player initialization
 function onPlayerReady(event) {
-    event.target.setVolume(100);
-    event.target.playVideo();
-    // Add TV-specific workaround
-    if (/TV|SmartTV|GoogleTV/.test(navigator.userAgent)) {
-        setInterval(() => {
-            if (player.getPlayerState() === YT.PlayerState.PAUSED && wasPlaying) {
-                player.playVideo();
-            }
-        }, 1000); // Aggressive TV state maintenance
+    // Create Web Audio API connection if available
+    if (audioContext) {
+        const stream = document.getElementById('player').captureStream();
+        const mediaStreamSource = audioContext.createMediaStreamSource(stream);
+        sourceNode = mediaStreamSource;
+        sourceNode.connect(gainNode);
     }
+    
+    // Add visibility change handler
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && wasPlaying) {
+            player.playVideo();
+        }
+    });
 }
 
         // Utility Functions
@@ -577,6 +732,11 @@ function onPlayerReady(event) {
 
         // Add to existing playVideo function
         function playVideo(video) {
+
+            if (audioContext && audioContext.state !== 'running') {
+                audioContext.resume();
+            }
+
             if (failedVideos.has(video.videoId)) {
                 showToast('Skipping previously failed video');
                 playNextVideo();

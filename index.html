@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Karaoke Player Pro</title>
     <style>
+        
+        /* Add subtle animation for voice search */
+        @keyframes voice-active {
+            0% { background-color: #007bff; }
+            50% { background-color: #ff4444; }
+            100% { background-color: #007bff; }
+        }
+
+        .voice-active {
+            animation: voice-active 1s infinite;
+        }
+         
+        /* Add transition for smooth removal */
+        .search-result {
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+
+        .search-result.removing {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
         /* Enhanced Dark Theme with Fixed Layout */
         body {
             margin: 0;
@@ -156,6 +178,26 @@
         let currentVideo = null;
         let retryCount = 0;
         const MAX_RETRIES = 2;
+        // Add these constants at the top
+        const MAX_SINGLE_RETRIES = 2; // Max replacements per video
+        const MAX_TOTAL_RETRIES = 5;  // Max total replacement attempts
+        const FAILED_VIDEO_TTL = 300000; // 5 minutes cache
+
+        // Add this at the top with other constants
+        const SEARCH_RESULT_TTL = 300000; // 5 minutes
+
+        // Add to existing variables
+        let addedVideoIds = new Set();
+        let currentSearchResults = [];
+        let currentSearchHeader = '';
+
+        let wasPlaying = false;
+        let originalVolume = 100;
+
+
+        // Add to existing variables
+        let replacementAttempts = 0;
+        let failedVideos = new Map(); // videoId: { count: number, timestamp: number }
 
         // YouTube Player Initialization
         function onYouTubeIframeAPIReady() {
@@ -206,94 +248,149 @@
             }
         });
 
-         // Updated searchYouTube function with karaoke filtering
-    async function searchYouTube(query, excludeId = null) {
-        try {
-            const searchResponse = await fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10` +
-                `&q=${encodeURIComponent(query + ' karaoke')}&type=video&key=${YT_API_KEY}`
-            );
-            
-            const searchData = await searchResponse.json();
-            return processVideoResults(searchData.items).filter(video =>
-                !excludeId || video.videoId !== excludeId
-            );
-        } catch (error) {
-            console.error('Search failed:', error);
-            return [];
-        }
+     // Modified search function with exclusion parameters
+// Update searchYouTube function to exclude added videos
+async function searchYouTube(query, options = {}) {
+    try {
+        const processedQuery = query.toLowerCase().includes('karaoke') ? 
+            query : `${query} karaoke`;
+        
+        const excludeIds = [
+            ...Array.from(addedVideoIds),
+            ...Array.from(failedVideos.keys()),
+            options.excludeId
+        ].filter(Boolean);
+
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10` +
+            `&q=${encodeURIComponent(processedQuery)}` +
+            `&type=video&key=${YT_API_KEY}` +
+            `&cache=${Date.now()}` +
+            (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
+        );
+
+        const data = await response.json();
+        return processVideoResults(data.items);
+    } catch (error) {
+        console.error('Search failed:', error);
+        return [];
+    }
+}
+
+        // Updated processVideoResults function
+    function processVideoResults(items) {
+        return items.map(item => ({
+            videoId: item.id.videoId,
+            title: item.snippet.title,
+            thumbnail: item.snippet.thumbnails.medium.url,
+            channel: item.snippet.channelTitle
+        }));
     }
 
-        function processVideoResults(items) {
-            return items.map(item => ({
-                videoId: item.id.videoId,
-                title: item.snippet.title,
-                thumbnail: item.snippet.thumbnails.medium.url
-            }));
-        }
+         // Enhanced video replacement function
+async function handleUnavailableVideo(errorIndex) {
+    const originalVideo = queue[errorIndex];
+    try {
+        const results = await searchYouTube(originalVideo.title, {
+            excludeId: originalVideo.videoId,
+            excludeFailed: true
+        });
 
-         // Add back the enhanced error handling function
-         async function handleUnavailableVideo(errorIndex) {
-            try {
-                const originalVideo = queue[errorIndex];
-                const results = await searchYouTube(originalVideo.title, originalVideo.videoId);
-                
-                if (results.length > 0) {
-                    // Replace the problematic video in queue
-                    const fallbackVideo = results[0];
-                    queue[errorIndex] = fallbackVideo;
-                    updateQueueDisplay();
-                    playVideo(fallbackVideo);
-                    showToast(`Replaced unavailable video with: ${fallbackVideo.title}`);
-                    return true;
-                }
-            } catch (error) {
-                console.error('Video replacement failed:', error);
-            }
-            return false;
+        if (results.length > 0) {
+            const fallbackVideo = results.find(v => 
+                !failedVideos.has(v.videoId)
+            ) || results[0];
+
+            queue[errorIndex] = fallbackVideo;
+            updateQueueDisplay();
+            playVideo(fallbackVideo);
+            showToast(`Replaced: ${originalVideo.title} → ${fallbackVideo.title}`);
+            return true;
         }
-        // Queue Management
+    } catch (error) {
+        console.error('Replacement failed:', error);
+    }
+    return false;
+}
+        // Modified addToQueue function
         function addToQueue(video) {
             if (!queue.some(v => v.videoId === video.videoId)) {
                 queue.push(video);
+                addedVideoIds.add(video.videoId);
                 updateQueueDisplay();
-                if (!currentVideo) playVideo(video);
+                
+                // Immediately remove from visible results
+                const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
+                if (resultItem) {
+                    resultItem.remove();
+                    // Show updated count
+                    const remaining = document.querySelectorAll('.search-result').length;
+                    document.querySelector('.suggestion-header').innerHTML = 
+                        `${currentSearchHeader} (${remaining} remaining)`;
+                }
+
+                if (!currentVideo) {
+                    playVideo(video);
+                }
+                
+                // Temporarily keep in added list
+                setTimeout(() => {
+                    addedVideoIds.delete(video.videoId)
+                }, SEARCH_RESULT_TTL);
             }
         }
 
-         // Modified playNextVideo function
-    async function playNextVideo() {
-        if (queue.length > 0) {
-            queue.shift();
-            updateQueueDisplay();
+
+      // Modified playNextVideo function
+        async function playNextVideo() {
+            if (queue.length > 0) {
+                // Add to history before removing
+                searchHistory.unshift(currentVideo);
+                if (searchHistory.length > MAX_HISTORY) {
+                    searchHistory.pop();
+                }
+                queue.shift();
+                updateQueueDisplay();
+            }
+
+            if (queue.length > 0) {
+                await playVideo(queue[0]);
+            } else {
+                currentVideo = null;
+            }
+
+            await showSuggestions();
         }
 
-        if (queue.length > 0) {
-            await playVideo(queue[0]);
-        } else {
-            currentVideo = null;
-        }
-
-        // Always show suggestions after any video ends
-        await showSuggestions();
-    }
-
-        // Enhanced showSuggestions function
+    // Enhanced suggestion system
     async function showSuggestions() {
         try {
             let suggestions = [];
-            const suggestionHeader = queue.length === 0 ? 
-                'Suggested Songs to Start' : 
-                `More Like: ${currentVideo?.title || 'Recent Song'}`;
-
-            if (currentVideo) {
-                suggestions = await getSuggestedVideos();
-            }
+            let suggestionHeader = 'Popular Karaoke Songs';
             
-            // Fallback to popular karaoke songs if no suggestions
-            if (suggestions.length === 0) {
-                suggestions = await searchYouTube('popular karaoke songs');
+            if (searchHistory.length > 0) {
+                // Get suggestions based on recent history
+                const recentTitles = searchHistory.map(v => v.title).join(' ');
+                const response = await fetch(
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5` +
+                    `&q=${encodeURIComponent(recentTitles + ' karaoke')}&type=video&key=${YT_API_KEY}&cache=${Date.now()}`
+                );
+                const data = await response.json();
+                suggestions = processVideoResults(data.items);
+                suggestionHeader = 'Based on Recent Songs';
             }
+
+            // Fallback to popular songs if no suggestions
+            if (suggestions.length === 0) {
+                suggestions = await searchYouTube('latest karaoke songs');
+                suggestionHeader = 'Popular Karaoke Songs';
+            }
+
+            // Filter out already queued or played videos
+            suggestions = suggestions.filter(video => 
+                !queue.some(q => q.videoId === video.videoId) &&
+                !searchHistory.some(h => h.videoId === video.videoId)
+            );
 
             displayResults(suggestions.slice(0, 5), suggestionHeader);
         } catch (error) {
@@ -301,20 +398,21 @@
         }
     }
 
-       // Modified getSuggestedVideos function
+    // Modified search function with cache busting
     async function getSuggestedVideos() {
         try {
             if (!currentVideo) return [];
             
             const response = await fetch(
                 `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5` +
-                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${YT_API_KEY}`
+                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${YT_API_KEY}&cache=${Date.now()}`
             );
             
             const data = await response.json();
             return processVideoResults(data.items).filter(video => 
-                video.title.toLowerCase().includes('karaoke') ||
-                video.title.toLowerCase().includes('lyrics')
+                !video.title.toLowerCase().includes('original') &&
+                (video.title.toLowerCase().includes('karaoke') ||
+                video.title.toLowerCase().includes('lyrics'))
             );
         } catch (error) {
             console.error('Suggestions fetch failed:', error);
@@ -322,18 +420,33 @@
         }
     }
 
-        // Updated displayResults function
+     // Modified displayResults function
     function displayResults(results, headerText = 'Results') {
+        currentSearchResults = results;
+        currentSearchHeader = headerText;
+        
+        const filteredResults = results.filter(video => 
+            !addedVideoIds.has(video.videoId) &&
+            !queue.some(q => q.videoId === video.videoId)
+        );
+
         const container = document.getElementById('search-results');
-        if (results.length === 0) {
-            container.innerHTML = `<div class="no-results">No suggestions available</div>`;
+        if (filteredResults.length === 0) {
+            container.innerHTML = `
+                <div class="suggestion-header">${headerText}</div>
+                <div class="no-results">
+                    <p>No results found</p>
+                    ${headerText === 'Search Results' ? 
+                        '<button onclick="searchPopular()">Show Popular Songs</button>' : ''}
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = `
             <div class="suggestion-header">${headerText}</div>
-            ${results.map(video => `
-                <div class="search-result">
+            ${filteredResults.map(video => `
+                <div class="search-result" data-video-id="${video.videoId}">
                     <img src="${video.thumbnail}" alt="${video.title}">
                     <div>
                         <h4>${video.title}</h4>
@@ -344,6 +457,19 @@
                 </div>
             `).join('')}
         `;
+    }
+
+    // Add popular songs fallback
+    async function searchPopular() {
+        toggleLoading(true);
+        try {
+            const results = await searchYouTube('popular karaoke songs');
+            displayResults(results, 'Popular Karaoke Songs');
+        } catch (error) {
+            console.error('Popular songs error:', error);
+        } finally {
+            toggleLoading(false);
+        }
     }
 
         function updateQueueDisplay() {
@@ -358,34 +484,90 @@
         }
 
         // Voice Search Implementation
-        function initializeVoiceSearch() {
-            if ('webkitSpeechRecognition' in window) {
-                const recognition = new webkitSpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = false;
+        // Modified voice search initialization
+function initializeVoiceSearch() {
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
 
-                recognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
-                    document.getElementById('search-input').value = transcript;
-                };
-
-                recognition.onerror = (event) => {
-                    console.error('Voice recognition error:', event.error);
-                };
-
-                document.getElementById('voice-search').addEventListener('click', () => {
-                    recognition.start();
-                    document.getElementById('voice-search').style.backgroundColor = '#ff4444';
-                });
-
-                recognition.onend = () => {
-                    document.getElementById('voice-search').style.backgroundColor = '#007bff';
-                };
-            } else {
-                document.getElementById('voice-search').disabled = true;
-                document.getElementById('voice-search').title = 'Voice search not supported';
+        recognition.onstart = () => {
+            // Store playback state and volume
+            wasPlaying = player.getPlayerState() === YT.PlayerState.PLAYING;
+            originalVolume = player.getVolume();
+            
+            // Duck audio to 10% volume
+            player.setVolume(10);
+            
+            // Maintain playback if paused by TV browser
+            if (wasPlaying) {
+                setTimeout(() => {
+                    try {
+                        player.playVideo();
+                        player.setVolume(10);
+                    } catch (e) {
+                        console.log('Playback maintenance failed');
+                    }
+                }, 300); // Adjust timing based on TV response
             }
-        }
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('search-input').value = transcript;
+            restorePlaybackState();
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Voice recognition error:', event.error);
+            restorePlaybackState();
+        };
+
+        recognition.onend = () => {
+            restorePlaybackState();
+        };
+
+        document.getElementById('voice-search').addEventListener('click', () => {
+            recognition.start();
+        });
+    } else {
+        document.getElementById('voice-search').disabled = true;
+    }
+}
+
+// Add restoration function
+function restorePlaybackState() {
+    // Restore original volume
+    player.setVolume(originalVolume);
+    
+    // Try to maintain playback state
+    if (wasPlaying) {
+        setTimeout(() => {
+            try {
+                player.playVideo();
+            } catch (e) {
+                console.log('Playback restoration failed');
+            }
+        }, 500); // TV browsers often need longer delays
+    }
+    
+    // Update UI
+    document.getElementById('voice-search').style.backgroundColor = '#007bff';
+}
+
+// Add to player initialization
+function onPlayerReady(event) {
+    event.target.setVolume(100);
+    event.target.playVideo();
+    // Add TV-specific workaround
+    if (/TV|SmartTV|GoogleTV/.test(navigator.userAgent)) {
+        setInterval(() => {
+            if (player.getPlayerState() === YT.PlayerState.PAUSED && wasPlaying) {
+                player.playVideo();
+            }
+        }, 1000); // Aggressive TV state maintenance
+    }
+}
 
         // Utility Functions
         function toggleLoading(show) {
@@ -393,35 +575,67 @@
             document.querySelector('#search-form button[type="submit"]').disabled = show;
         }
 
+        // Add to existing playVideo function
         function playVideo(video) {
+            if (failedVideos.has(video.videoId)) {
+                showToast('Skipping previously failed video');
+                playNextVideo();
+                return;
+            }
             retryCount = 0;
             currentVideo = video;
             player.loadVideoById(video.videoId);
         }
 
-        // Modified playback error handler
-        async function handlePlaybackError() {
-            const errorIndex = queue.findIndex(v => v.videoId === currentVideo?.videoId);
-            
-            if (errorIndex === -1) return;
-
-            if (retryCount < MAX_RETRIES) {
-                retryCount++;
-                const success = await handleUnavailableVideo(errorIndex);
-                if (success) return;
+            // Add cleanup function
+        function cleanFailedVideos() {
+            const now = Date.now();
+            for (const [videoId, entry] of failedVideos.entries()) {
+                if (now - entry.timestamp > FAILED_VIDEO_TTL) {
+                    failedVideos.delete(videoId);
+                }
             }
-
-            // Fallback to next video if replacement fails
-            queue.splice(errorIndex, 1);
-            updateQueueDisplay();
-            if (queue.length > 0) {
-                playVideo(queue[0]);
-            } else {
-                currentVideo = null;
-                showSuggestions();
-            }
-            showToast('Failed to play video. Moving to next in queue.');
         }
+        // Modified playback error handler
+        // Modified error handler
+async function handlePlaybackError() {
+    const errorIndex = queue.findIndex(v => v.videoId === currentVideo?.videoId);
+    if (errorIndex === -1) return;
+
+    // Track failed video
+    const currentAttempts = (failedVideos.get(currentVideo.videoId)?.count || 0) + 1;
+    failedVideos.set(currentVideo.videoId, {
+        count: currentAttempts,
+        timestamp: Date.now()
+    });
+
+    // Cleanup old failures
+    cleanFailedVideos();
+
+    if (replacementAttempts >= MAX_TOTAL_RETRIES) {
+        showToast('Maximum replacement attempts reached. Clearing queue.');
+        queue = [];
+        currentVideo = null;
+        updateQueueDisplay();
+        return;
+    }
+
+    if (currentAttempts <= MAX_SINGLE_RETRIES) {
+        replacementAttempts++;
+        const success = await handleUnavailableVideo(errorIndex);
+        if (success) return;
+    }
+
+    // Final fallback
+    queue.splice(errorIndex, 1);
+    updateQueueDisplay();
+    if (queue.length > 0) {
+        playVideo(queue[0]);
+    } else {
+        currentVideo = null;
+        showSuggestions();
+    }
+}
 
         // Add toast notification function
         function showToast(message, duration = 3000) {
@@ -446,6 +660,11 @@
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         document.head.appendChild(tag);
+
+        // Add cache buster and history tracking
+        let searchHistory = [];
+        const MAX_HISTORY = 3;
+        
     </script>
 </body>
 </html>

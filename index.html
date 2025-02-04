@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player AI Pro v3.1</title>
+    <title>Karaoke Player AI Pro</title>
     <style>
 
     /* Add AI Recommendations styling */
@@ -295,16 +295,15 @@
             </form>
             <div id="loading" class="loader"></div>
         </div>
-        <div id="ai-recommendations">
-            <h3>Song Suggestions</h3>
-            <div id="ai-suggestions-list"></div>
-        </div>
         <div id="search-results"></div>
     </div>
 
     <div id="main-player">
         <div id="player"></div>
-        
+        <div id="ai-recommendations">
+            <h3>AI Suggestions</h3>
+            <div id="ai-suggestions-list"></div>
+        </div>
     </div>
 
     <div id="ai-status">
@@ -317,8 +316,7 @@
     </div>
 
     <script>
-        const YT_API_KEYS = ['AIzaSyBw8YJYBsq2wBHafYpAUhncN98Mg7YYmRM', 'AIzaSyBfjtDjII62pyMRA6_Nx66gPkNk8ORg4Z0', 'AIzaSyDqHQFWXmYB2PzHzTq8enfm16cnalljKE0', 'AIzaSyDAuiTHj5zY6rh0TSzmDcKGoDmjNDlAEbI'];
-        let currentKeyIndex = 0; // Initialize the index to track the current key
+        const YT_API_KEY = 'AIzaSyBfjtDjII62pyMRA6_Nx66gPkNk8ORg4Z0';
         const MAX_RETRIES = 2;
         const MAX_SINGLE_RETRIES = 2; // Max replacements per video
         const MAX_TOTAL_RETRIES = 5;  // Max total replacement attempts
@@ -362,27 +360,8 @@
         lastRequest: 0
         };
 
-        // Function to remove AI suggestions when clicked
-        function removeAISuggestion(element) {
-            element.remove();
-            const container = document.getElementById('ai-suggestions-list');
-
-            // Trigger new suggestions when the list is empty
-            if (container.childElementCount === 0) {
-                showSuggestions();
-            }
-        }
-
-        // Function to get the next API key in rotation
-        function getNextApiKey() {
-            const key = YT_API_KEYS[currentKeyIndex];
-            currentKeyIndex = (currentKeyIndex + 1) % YT_API_KEYS.length; // Rotate index
-            return key;
-        }
-
-
         // New function to display AI suggestions
-        /* function displayAISuggestions(suggestions) {
+        function displayAISuggestions(suggestions) {
             const container = document.getElementById('ai-suggestions-list');
             container.innerHTML = suggestions.map(song => `
                 <div class="ai-suggestion-link" 
@@ -390,45 +369,21 @@
                     ${song.song.replace('"','')} - ${song.artist}
                 </div>
             `).join('');
-        } */
-
-        // Modified displayAISuggestions to attach the click behavior
-        function displayAISuggestions(suggestions) {
-            const container = document.getElementById('ai-suggestions-list');
-            container.innerHTML = suggestions.map(song => `
-                <div class="ai-suggestion-link" 
-                    onclick="searchAISuggestion('${song.song.replace('"', '')} - ${song.artist}'); removeAISuggestion(this);">
-                    ${song.song.replace('"', '')} - ${song.artist}
-                </div>
-            `).join('');
         }
 
-        // Modified searchAISuggestion to add the first video to the queue upon clicking the AI suggestion link
-        async function searchAISuggestion(query) {
-            try {
-                // Perform a YouTube search with the query
-                const results = await searchYouTube(query);
-                if (results.length > 0) {
-                    const firstVideo = results[0];
-                    addToQueue(firstVideo); // Automatically add the first video to the queue
-                    showToast(`Added to Queue: ${firstVideo.title}`); // Show confirmation
-                } else {
-                    showToast('No videos found for this suggestion.');
-                }
-            } catch (error) {
-                console.error('Error processing AI suggestion:', error);
-                showToast('Failed to process the AI suggestion.');
-            }
+        // New search handler for AI links
+        function searchAISuggestion(query) {
+            document.getElementById('search-input').value = query;
+            document.getElementById('search-form').dispatchEvent(new Event('submit'));
         }
-
                 // Update status display
         function updateAIStatus() {
             const remaining = AI_RPM_LIMIT - aiUsage.count;
             const status = remaining > 5 ? 'Ready' : 
                         remaining > 0 ? 'Limited' : 'Paused';
             
-           // document.getElementById('ai-status-text').textContent = 
-             //   `${status} (${remaining} req left)`;
+            document.getElementById('ai-status-text').textContent = 
+                `${status} (${remaining} req left)`;
         }
 
         // Update status every second
@@ -457,15 +412,8 @@
             console.log('Player ready');
         }
 
-        // Modify YouTube player state change to handle the first trigger
-        let firstVideoEnded = false;
-
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
-                if (!firstVideoEnded) {
-                    firstVideoEnded = true;
-                    showSuggestions(); // Trigger AI suggestions after the first video ends
-                }
                 playNextVideo();
             }
         }
@@ -493,30 +441,28 @@
             }
         });
 
-   
-// Modified searchYouTube function
+     // Modified search function with exclusion parameters
+// Update searchYouTube function to exclude added videos
 async function searchYouTube(query, options = {}) {
     try {
-        const apiKey = getNextApiKey(); // Get the next API key in rotation
 
         if (options.isAISearch && !query.toLowerCase().includes('karaoke')) {
-            query += ' karaoke';
+        query += ' karaoke';
         }
 
-        const processedQuery = query.toLowerCase().includes('karaoke') 
-            ? query 
-            : `${query} karaoke`;
-
+        const processedQuery = query.toLowerCase().includes('karaoke') ? 
+            query : `${query} karaoke`;
+        
         const excludeIds = [
             ...Array.from(addedVideoIds),
             ...Array.from(failedVideos.keys()),
-            options.excludeId,
+            options.excludeId
         ].filter(Boolean);
 
         const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3` +
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10` +
             `&q=${encodeURIComponent(processedQuery)}` +
-            `&type=video&key=${apiKey}` +
+            `&type=video&key=${YT_API_KEY}` +
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         );
@@ -618,22 +564,33 @@ async function handleUnavailableVideo(errorIndex) {
             await showSuggestions();
         }
 
-/*  // Optimized context builder
+/*     // Modified showSuggestions function
+async function showSuggestions() {
+    try {
+        let suggestions = [];
+        let header = 'Suggested Songs';
+        
+        if (AI_SUGGESTION_ENABLED && OPENAI_API_KEY) {
+            suggestions = await getAISuggestions();
+            header = 'AI Recommendations';
+        }
+        
+        if (suggestions.length === 0) {
+            suggestions = await getSuggestedVideos();
+            header = 'Related Songs';
+        }
+
+        displayResults(suggestions, header);
+    } catch (error) {
+        console.error('Suggestion error:', error);
+    }
+}
+ */// Optimized context builder
 function buildAIQueryContext() {
     return `Suggest 3-5 popular karaoke songs similar to: ${
         [...suggestionContext.played, ...suggestionContext.queued]
         .filter((v, i, a) => a.indexOf(v) === i) // Unique values
         .slice(-3) // Last 3 unique items
-        .join(', ')
-    }. Respond ONLY as a comma-separated list of "Song - Artist".`;
-}
- */
-
- function buildAIQueryContext() {
-    return `Suggest 5 popular karaoke songs similar to: ${
-        [...suggestionContext.played, ...suggestionContext.queued]
-        .filter((v, i, a) => a.indexOf(v) === i) // Unique values
-        .slice(-3) // Last 3 unique items for context
         .join(', ')
     }. Respond ONLY as a comma-separated list of "Song - Artist".`;
 }
@@ -709,8 +666,7 @@ async function getAISuggestions() {
     }
 
     try {
-        //const prompt = buildOptimizedPrompt();
-        const prompt = buildAIQueryContext();
+        const prompt = buildOptimizedPrompt();
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -724,7 +680,7 @@ async function getAISuggestions() {
                     content: prompt
                 }],
                 temperature: 0.7,
-                max_tokens: 100, 
+                max_tokens: 50, // Reduced from 80
                 n: 1
             })
         });
@@ -755,7 +711,7 @@ async function getAISuggestions() {
     }
 }
 
-/* // Updated processAISuggestions function
+// Updated processAISuggestions function
 function processAISuggestions(data) {
     try {
         const content = data.choices[0]?.message?.content?.trim() || '';
@@ -782,39 +738,26 @@ function processAISuggestions(data) {
         artist: s.artist,
         searchQuery: `${s.song} ${s.artist} karaoke`
     }));
-} */
-
-function processAISuggestions(data) {
-    try {
-        const content = data.choices[0]?.message?.content?.trim() || '';
-        if (!content) return [];
-
-        // Split the single string into an array using the comma as a separator
-        return content.split(',')
-            .map(entry => entry.trim()) // Trim whitespace
-            .filter(entry => entry.includes('-')) // Ensure the entry contains "Song - Artist"
-            .map(entry => {
-                const [song, artist] = entry.split('-').map(s => s.trim());
-                return { song, artist };
-            })
-            .filter(entry => entry.song && entry.artist) // Validate both song and artist exist
-            .slice(0, 5); // Limit to 5 suggestions
-    } catch (error) {
-        console.error('Error processing AI response:', error, data);
-        return [];
-    }
 }
 
 
-
-
+/*  // Update processAISuggestions
+function processAISuggestions(data) {
+    // ... (keep previous processing) ...
+    return validSuggestions.map(s => ({
+        song: s.song,
+        artist: s.artist,
+        searchQuery: `${s.song} ${s.artist} karaoke`
+    }));
+}
+ */
 // Optimized prompt builder
 function buildOptimizedPrompt() {
     const recent = [...new Set([...suggestionContext.played, ...suggestionContext.queued])]
         .slice(-3)
         .join(', ');
         
-    return `Suggest 5 karaoke songs similar to ${recent}. But do not include all songs that is already in ${recent}. Format: "Song - Artist".`;
+    return `Suggest 3 karaoke songs similar to ${recent}. Format: "Song - Artist".`;
 }
 
 // Reset counter every minute
@@ -871,13 +814,11 @@ async function searchAISuggestions(aiSuggestions) {
     // Modified search function with cache busting
     async function getSuggestedVideos() {
         try {
-            const apiKey = getNextApiKey(); // Get the next API key in rotation
-
             if (!currentVideo) return [];
             
             const response = await fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3` +
-                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${apiKey}&cache=${Date.now()}`
+                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5` +
+                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${YT_API_KEY}&cache=${Date.now()}`
             );
             
             const data = await response.json();

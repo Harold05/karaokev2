@@ -1,5 +1,5 @@
 [build]
-  publish = "dist" # Replace with your build output directory
+
 
 [[plugins]]
   package = "netlify-plugin-inline-functions-env"

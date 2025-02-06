@@ -1,5 +1,0 @@
-[build]
-
-
-[[plugins]]
-  package = "netlify-plugin-inline-functions-env"

@@ -3,8 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v2.1 </title>
+    <title>Karaoke Player Pro v2.2.3 </title>
     <style>
+
+/* Add to CSS */
+#user-profiles-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    padding: 15px;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    max-width: 80%;
+}
+
+#user-profiles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.name-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: transform 0.2s;
+    color: white;
+}
+
+.name-pill:hover {
+    transform: scale(1.05);
+}
 
 .queue-item {
     position: relative;
@@ -16,13 +50,26 @@
     transition: all 0.2s;
 }
 
+.queue-item .name-tag {
+    position: absolute;
+    top: 50px; /* Position the tag at the bottom */
+    right: 10px; /* Position the tag at the right */
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    color: white;
+    font-weight: bold;
+    background-color: #007bff; /* Default color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    
+}
 .remove-btn i {
     font-size: 12px; /* Adjust icon size */
 }
 
 .remove-btn {
     position: absolute;
-    top: 5px;
+    top: 20px;
     right: 5px;
     background: #ff4444;
     color: white;
@@ -72,6 +119,20 @@
     backdrop-filter: blur(5px);
 }
 
+.name-tag {
+    position: absolute;
+    top: 10px; /* Position the tag at the bottom */
+    right: 10px; /* Position the tag at the right */
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    color: white;
+    font-weight: bold;
+    background-color: #007bff; /* Default color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
         /* Add subtle animation for voice search */
         @keyframes voice-active {
             0% { background-color: #007bff; }
@@ -83,10 +144,13 @@
             animation: voice-active 1s infinite;
         }
          
-        /* Add transition for smooth removal */
         .search-result {
-            transition: all 0.3s ease;
-            opacity: 1;
+            position: relative; /* Ensure relative positioning for child elements */
+            padding: 15px;
+            margin: 12px 0;
+            background: #333;
+            border-radius: 8px;
+            transition: transform 0.2s;
         }
 
         .search-result.removing {
@@ -145,6 +209,25 @@
             border-radius: 4px;
             margin-right: 15px;
         }
+
+    .search-results .name-tag {
+    position: absolute;
+    top: 10px; /* Position the tag at the top */
+    right: 10px; /* Position the tag at the right */
+    padding: 5px 10px; /* Add compact padding */
+    border-radius: 8px; /* Rounded corners */
+    font-size: 0.8em; /* Small text */
+    color: white;
+    font-weight: bold;
+    background-color: #007bff; /* Default color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Text shadow for better visibility */
+    z-index: 1; /* Ensure it appears above other content */
+    display: inline-block; /* Prevent stretching */
+    height: auto; /* Ensure height adjusts to content */
+    line-height: normal; /* Prevent vertical stretching */
+    white-space: nowrap; /* Keep text on one line */
+}
+
 
         #player {
             width: 100%;
@@ -231,6 +314,9 @@
     <div id="main-player">
         <div id="player"></div>
     </div>
+    <div id="user-profiles-container">
+        <div id="user-profiles"></div>
+    </div>
 
     <div id="queue-panel">
         <h2>📃 Queue List</h2>
@@ -245,6 +331,7 @@
         let currentVideo = null;
         let retryCount = 0;
         const MAX_RETRIES = 2;
+        const MAX_USERS = 5;
         // Add these constants at the top
         const MAX_SINGLE_RETRIES = 2; // Max replacements per video
         const MAX_TOTAL_RETRIES = 5;  // Max total replacement attempts
@@ -257,9 +344,11 @@
         let addedVideoIds = new Set();
         let currentSearchResults = [];
         let currentSearchHeader = '';
-
         let wasPlaying = false;
         let originalVolume = 100;
+
+        //Voice profiles
+        let voiceProfiles = JSON.parse(localStorage.getItem('voiceProfiles') || '{}');
 
         // Add these variables at the top
         let audioContext;
@@ -271,6 +360,35 @@
         // Add to existing variables
         let replacementAttempts = 0;
         let failedVideos = new Map(); // videoId: { count: number, timestamp: number }
+
+        const nameColors = new Map(); // Map to store name-color pairs
+
+        // Utility function to get or assign a color for a name
+        function getColorForName(name) {
+            if (!nameColors.has(name)) {
+                // Generate a random color
+                const randomColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 80%)`;
+                nameColors.set(name, randomColor);
+            }
+            return nameColors.get(name);
+        }
+
+
+        // Modified extractName function
+        function extractName(query) {
+            // Check for registration phrase
+            const regMatch = query.match(/hi my name is (\w+)/i);
+            if (regMatch) return {name: regMatch[1], isRegistration: true};
+            
+            // Existing tag as detection
+            const tagMatch = query.match(/tag as (\w+)/i);
+            return {name: tagMatch?.[1], isRegistration: false};
+        }
+
+        function cleanQuery(query) {
+            return query.replace(/tag as\s+\w+/i, '').trim(); // Remove "tag as [name]" from the query
+        }
+
 
         // YouTube Player Initialization
         function onYouTubeIframeAPIReady() {
@@ -306,20 +424,31 @@
             handlePlaybackError();
         }
 
-        // Search Functionality
+        /* // Search Functionality
         document.getElementById('search-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             toggleLoading(true);
             try {
                 const query = document.getElementById('search-input').value;
-                const results = await searchYouTube(query);
-                displayResults(results, 'Search Results');
+                const name = extractName(query); // Extract the name (if any)
+                const processedQuery = cleanQuery(query); // Clean the query for actual search
+
+                const results = await searchYouTube(processedQuery); // Search with the cleaned query
+                displayResults(results, 'Search Results', name); // Pass the name for tagging
+
             } catch (error) {
                 console.error('Search error:', error);
             } finally {
                 toggleLoading(false);
             }
-        });
+        }); */
+
+        document.getElementById('search-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('search-input').value;
+    const name = extractName(query).name; // Get name from "tag as" command
+    performSearch(cleanQuery(query), name);
+});
  // Function to get the next API key in rotation
  function getNextApiKey() {
             const key = YT_API_KEYS[currentKeyIndex];
@@ -391,34 +520,32 @@ async function handleUnavailableVideo(errorIndex) {
     }
     return false;
 }
-        // Modified addToQueue function
-        function addToQueue(video) {
-            if (!queue.some(v => v.videoId === video.videoId)) {
-                queue.push(video);
-                addedVideoIds.add(video.videoId);
-                updateQueueDisplay();
-                
-                // Immediately remove from visible results
-                const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
-                if (resultItem) {
-                    resultItem.remove();
-                    // Show updated count
-                    const remaining = document.querySelectorAll('.search-result').length;
-                    document.querySelector('.suggestion-header').innerHTML = 
-                        `${currentSearchHeader} (${remaining} remaining)`;
-                }
-
-                if (!currentVideo) {
-                    playVideo(video);
-                }
-                
-                // Temporarily keep in added list
-                setTimeout(() => {
-                    addedVideoIds.delete(video.videoId)
-                }, SEARCH_RESULT_TTL);
-            }
+function addToQueue(video, name = null) {
+    if (!queue.some(v => v.videoId === video.videoId)) {
+        queue.push({ ...video, name }); // Add name to the video object
+        addedVideoIds.add(video.videoId);
+        updateQueueDisplay();
+        
+        // Immediately remove from visible results
+        const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
+        if (resultItem) {
+            resultItem.remove();
+            // Show updated count
+            const remaining = document.querySelectorAll('.search-result').length;
+            document.querySelector('.suggestion-header').innerHTML = 
+                `${currentSearchHeader} (${remaining} remaining)`;
         }
 
+        if (!currentVideo) {
+            playVideo(queue[0]);
+        }
+        
+        // Temporarily keep in added list
+        setTimeout(() => {
+            addedVideoIds.delete(video.videoId);
+        }, SEARCH_RESULT_TTL);
+    }
+}
 
       // Modified playNextVideo function
         async function playNextVideo() {
@@ -501,44 +628,50 @@ async function handleUnavailableVideo(errorIndex) {
         }
     }
 
-     // Modified displayResults function
-    function displayResults(results, headerText = 'Results') {
-        currentSearchResults = results;
-        currentSearchHeader = headerText;
-        
-        const filteredResults = results.filter(video => 
-            !addedVideoIds.has(video.videoId) &&
-            !queue.some(q => q.videoId === video.videoId)
-        );
+    function displayResults(results, headerText = 'Results', name = null) {
+    currentSearchResults = results;
+    currentSearchHeader = headerText;
 
-        const container = document.getElementById('search-results');
-        if (filteredResults.length === 0) {
-            container.innerHTML = `
-                <div class="suggestion-header">${headerText}</div>
-                <div class="no-results">
-                    <p>No results found</p>
-                    ${headerText === 'Search Results' ? 
-                        '<button onclick="searchPopular()">Show Popular Songs</button>' : ''}
-                </div>
-            `;
-            return;
-        }
+    const filteredResults = results.filter(video =>
+        !addedVideoIds.has(video.videoId) &&
+        !queue.some(q => q.videoId === video.videoId)
+    );
 
+    const container = document.getElementById('search-results');
+    if (filteredResults.length === 0) {
         container.innerHTML = `
             <div class="suggestion-header">${headerText}</div>
-            ${filteredResults.map(video => `
-                <div class="search-result" data-video-id="${video.videoId}">
+            <div class="no-results">
+                <p>No results found</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="suggestion-header">${headerText}</div>
+        ${filteredResults.map(video => {
+            const color = name ? getColorForName(name) : null; // Get a color if a name is provided
+            return `
+                <div class="search-result" style="position: relative;" data-video-id="${video.videoId}">
                     <img src="${video.thumbnail}" alt="${video.title}">
                     <div>
                         <h4>${video.title}</h4>
-                        <button onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')})">
+                        <button onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')}, '${name}')">
                             Add to Queue
                         </button>
+                        ${name ? `<div class="name-tag" style="background-color: ${color};">${name}</div>` : ''}
                     </div>
                 </div>
-            `).join('')}
-        `;
-    }
+            `;
+        }).join('')}
+    `;
+}
+
+
+
+
+
 
     // Add popular songs fallback
     async function searchPopular() {
@@ -553,18 +686,24 @@ async function handleUnavailableVideo(errorIndex) {
         }
     }
 
-        // Modified updateQueueDisplay function
-function updateQueueDisplay() {
+    function updateQueueDisplay() {
     const container = document.getElementById('queue-list');
-    container.innerHTML = queue.map((video, index) => `
-        <div class="queue-item">
-            <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
-            ${index === 0 ? 
-                `<strong>🎶 Now Playing:</strong> ${video.title}` : 
-                `<strong>#${index} Up Next:</strong> ${video.title}`}
-        </div>
-    `).join('');
+    container.innerHTML = queue.map((video, index) => {
+        const color = video.name ? getColorForName(video.name) : null; // Get a color for the name
+        return `
+            <div class="queue-item">
+                <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
+                ${index === 0 ? 
+                    `<strong>🎶 Now Playing:</strong> ${video.title}` : 
+                    `<strong>#${index} Up Next:</strong> ${video.title}`}
+                ${video.name ? `<div class="name-tag" style="background-color: ${color};">${video.name}</div>` : ''}
+            </div>
+        `;
+    }).join('');
 }
+
+
+
 
 // Add new remove function
 function removeFromQueue(index) {
@@ -584,7 +723,6 @@ function removeFromQueue(index) {
 }
 
         // Voice Search Implementation
-        // Modified voice search initialization
 // Modified voice search initialization
 function initializeVoiceSearch() {
     if ('webkitSpeechRecognition' in window) {
@@ -620,17 +758,54 @@ function initializeVoiceSearch() {
     schedulePlaybackResume();
 };
 
-        recognition.onresult = (event) => {
-            cleanupVoiceSearch();
-            const transcript = event.results[0][0].transcript;
-            const searchInput = document.getElementById('search-input');
-            searchInput.value = transcript;
-            
-            // Automatically trigger search
-            setTimeout(() => {
-                document.getElementById('search-form').dispatchEvent(new Event('submit'));
-            }, 300); // Short delay to ensure input is updated
-        };
+/* recognition.onresult = (event) => {
+    cleanupVoiceSearch();
+    const transcript = event.results[0][0].transcript.toLowerCase();
+    const searchInput = document.getElementById('search-input');
+    
+    // Handle registration
+    const {name, isRegistration} = extractName(transcript);
+    if (isRegistration && name) {
+        handleVoiceRegistration(name, event.results[0][0].confidence);
+        searchInput.value = '';
+        return;
+    }
+
+    // Handle normal search with best matching profile
+    const matchedName = findBestVoiceMatch(transcript);
+    searchInput.value = transcript;
+    
+    setTimeout(() => {
+        document.getElementById('search-form').dispatchEvent(
+            new Event('submit', { detail: { 
+                name: matchedName, 
+                query: cleanQuery(transcript) 
+            }})
+        );
+    }, 300);
+}; */
+
+recognition.onresult = (event) => {
+    cleanupVoiceSearch();
+    const transcript = event.results[0][0].transcript;
+    const searchInput = document.getElementById('search-input');
+    
+    // Handle registration
+    const {name, isRegistration} = extractName(transcript);
+    if (isRegistration && name) {
+        handleVoiceRegistration(name, event.results[0][0].confidence);
+        searchInput.value = '';
+        return;
+    }
+
+    // Get best match and perform search directly
+    const matchedName = findBestVoiceMatch(transcript);
+    const processedQuery = cleanQuery(transcript);
+    
+    // Directly call search instead of form submission
+    performSearch(processedQuery, matchedName);
+    searchInput.value = processedQuery;
+};
 
         recognition.onerror = cleanupVoiceSearch;
         recognition.onend = cleanupVoiceSearch;
@@ -641,6 +816,85 @@ function initializeVoiceSearch() {
     } else {
         document.getElementById('voice-search').disabled = true;
     }
+}
+
+// New direct search function
+async function performSearch(query, name = null) {
+    toggleLoading(true);
+    try {
+        const results = await searchYouTube(query);
+        displayResults(results, 'Search Results', name);
+    } catch (error) {
+        console.error('Search error:', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+function findBestVoiceMatch(transcript) {
+    // Simple confidence-based matching (replace with proper audio analysis in real system)
+    const names = Object.keys(voiceProfiles);
+    let bestMatch = {name: null, score: 0};
+    
+    names.forEach(name => {
+        const score = calculateSimilarity(transcript, name);
+        if (score > bestMatch.score) {
+            bestMatch = {name, score};
+        }
+    });
+    
+    return bestMatch.score > 0.7 ? bestMatch.name : null;
+}
+
+function calculateSimilarity(input, name) {
+    // Simple text similarity check (would use voice features in real implementation)
+    const inputLower = input.toLowerCase();
+    const nameLower = name.toLowerCase();
+    
+    if (inputLower.includes(nameLower)) return 1.0;
+    return 0; // Replace with actual voice analysis
+}
+
+function updateUserPills() {
+    const container = document.getElementById('user-profiles');
+    container.innerHTML = '';
+    
+    Object.keys(voiceProfiles).forEach(name => {
+        const pill = document.createElement('div');
+        pill.className = 'name-pill';
+        pill.style.backgroundColor = voiceProfiles[name].color;
+        pill.textContent = name;
+        pill.onclick = () => deleteUser(name);
+        container.appendChild(pill);
+    });
+}
+
+function deleteUser(name) {
+    delete voiceProfiles[name];
+    localStorage.setItem('voiceProfiles', JSON.stringify(voiceProfiles));
+    updateUserPills();
+    showToast(`${name} profile removed`);
+}
+
+// Initialize profiles on load
+updateUserPills();
+
+// Add voice profile functions
+function handleVoiceRegistration(name, confidence) {
+    if (Object.keys(voiceProfiles).length >= MAX_USERS) {
+        showToast('Maximum user limit reached');
+        return;
+    }
+    
+    voiceProfiles[name] = {
+        lastUsed: Date.now(),
+        confidence: confidence,
+        color: getColorForName(name)
+    };
+    
+    localStorage.setItem('voiceProfiles', JSON.stringify(voiceProfiles));
+    showToast(`Voice profile created for ${name}!`);
+    updateUserPills();
 }
 
 // Add new cleanup function

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v2.4.1 </title>
+    <title>Karaoke Player Pro v2.5.0 </title>
     <style>
 
 /* Add to CSS */
@@ -636,6 +636,12 @@ function addToQueue(video, name = null) {
         if (!currentVideo) {
             playVideo(queue[0]); // Start playing if nothing is currently playing
         }
+
+         // Focus back on the voice search button
+         const voiceSearchButton = document.getElementById('voice-search');
+        if (voiceSearchButton) {
+            voiceSearchButton.focus();
+        }
     }
 }
 
@@ -743,14 +749,20 @@ function addToQueue(video, name = null) {
 
     container.innerHTML = `
         <div class="suggestion-header">${headerText}</div>
-        ${filteredResults.map(video => {
+        ${filteredResults.map((video, index) => {
             const color = name ? getColorForName(name) : null; // Get a color if a name is provided
             return `
-                <div class="search-result" style="position: relative;" data-video-id="${video.videoId}">
+                <div 
+                    class="search-result" 
+                    style="position: relative;" 
+                    data-video-id="${video.videoId}" 
+                    tabindex="0" 
+                    id="search-result-${index}">
                     <img src="${video.thumbnail}" alt="${video.title}">
                     <div>
                         <h4>${video.title}</h4>
-                        <button onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')}, '${name}')">
+                        <button 
+                            onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')}, '${name}')">
                             Add to Queue
                         </button>
                         ${name ? `<div class="name-tag" style="background-color: ${color};">${name}</div>` : ''}
@@ -759,7 +771,14 @@ function addToQueue(video, name = null) {
             `;
         }).join('')}
     `;
+
+    // Focus on the first search result
+    const firstResult = document.getElementById('search-result-0');
+    if (firstResult) {
+        firstResult.focus();
+    }
 }
+
 
 
 

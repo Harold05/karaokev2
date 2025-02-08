@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v2.4.0 </title>
+    <title>Karaoke Player Pro v2.4.1 </title>
     <style>
 
 /* Add to CSS */
 #user-profiles-container {
     position: fixed;
-    bottom: 20px;
+    bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
     background: #333;
@@ -297,17 +297,18 @@
     background-color: #333;
     border: 1px solid #444;
     border-radius: 8px;
-    padding: 15px 20px;
+    padding: 10px 15px; /* Reduced padding */
     color: #fff;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.4; /* Reduced line height */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.5s ease, transform 0.5s ease; /* Smooth animation */
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 #voice-command-hint h3 {
     margin-top: 0;
-    font-size: 16px;
+    margin-bottom: 5px; /* Reduced margin between heading and text */
+    font-size: 15px; /* Slightly smaller font size */
     font-weight: bold;
     color: #00bfff;
 }
@@ -315,8 +316,10 @@
 #voice-hint-text {
     opacity: 0; /* Start invisible */
     transform: translateY(20px); /* Start below */
-    transition: opacity 0.5s ease, transform 0.5s ease; /* Animation */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    margin-top: 0; /* No margin above the hint text */
 }
+
 
 #voice-indicator {
     position: fixed;

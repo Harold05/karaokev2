@@ -347,9 +347,9 @@ async function searchYouTube(query, options = {}) {
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         ); */
-        let response = fetchYouTubeVideos(processedQuery, excludeIds = []);
+        let ytresponse = fetchYouTubeVideos(processedQuery, excludeIds = []);
 
-        const data = await response.json();
+        const data = await ytresponse.json();
         return processVideoResults(data.items);
     } catch (error) {
         console.error('Search failed:', error);

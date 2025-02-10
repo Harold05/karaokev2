@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v2.5.0 </title>
+    <title>Karaoke Player Pro v2.7.1</title>
     <style>
 
 /* Add to CSS */
@@ -69,8 +69,8 @@
 
 .remove-btn {
     position: absolute;
-    top: 20px;
-    right: 5px;
+    top: 10px;
+    right: 10px;
     background: #ff4444;
     color: white;
     border: none;
@@ -228,6 +228,29 @@
     white-space: nowrap; /* Keep text on one line */
 }
 
+.queue-item .play-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 0;
+}
+.queue-item .play-btn:hover {
+    opacity: 1;
+}
 
         #player {
             width: 100%;
@@ -805,6 +828,7 @@ function addToQueue(video, name = null) {
         return `
             <div class="queue-item">
                 <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
+                <button class="play-btn" onclick="playVideoFromQueue(${index})">▶</button>
                 ${index === 0 ? 
                     `<strong>🎶 Now Playing:</strong> ${video.title}` : 
                     `<strong>#${index} Up Next:</strong> ${video.title}`}
@@ -812,6 +836,14 @@ function addToQueue(video, name = null) {
             </div>
         `;
     }).join('');
+}
+
+function playVideoFromQueue(index) {
+    const video = queue[index];
+    queue.splice(index, 1);
+    queue.unshift(video);
+    updateQueueDisplay();
+    playVideo(video);
 }
 
 
@@ -1251,7 +1283,63 @@ async function handlePlaybackError() {
             setTimeout(() => toast.remove(), duration);
         }
 
-        // Initialization
+function saveQueueToLocalStorage() {
+    localStorage.setItem('videoQueue', JSON.stringify(queue));
+}
+
+function restoreQueueFromLocalStorage() {
+    const savedQueue = localStorage.getItem('videoQueue');
+    if (savedQueue) {
+        queue = JSON.parse(savedQueue);
+        updateQueueDisplay();
+    }
+}
+
+// Modify addToQueue function
+function addToQueue(video, name = null) {
+    if (!queue.some(v => v.videoId === video.videoId)) {
+        queue.push({ ...video, name });
+        addedVideoIds.add(video.videoId);
+        updateQueueDisplay();
+        showToast(`"${video.title}" added to queue`);
+        saveQueueToLocalStorage();
+        
+        // Remove the video from search results
+        const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
+        if (resultItem) {
+            resultItem.remove();
+        }
+
+        // Check if this is the only video in the queue
+        if (queue.length === 1) {
+            playVideo(video); // Play the video immediately if it's the only one
+        }
+
+        // Other existing code...
+    }
+}
+
+// Modify removeFromQueue function
+function removeFromQueue(index) {
+    if (index === 0 && queue.length > 0) {
+        queue.shift();
+        if (queue.length > 0) {
+            playVideo(queue[0]);
+        } else {
+            currentVideo = null;
+            showSuggestions();
+        }
+    } else {
+        queue.splice(index, 1);
+    }
+    updateQueueDisplay();
+    saveQueueToLocalStorage(); // Save to localStorage
+}
+
+// Call restore function on page load
+document.addEventListener('DOMContentLoaded', () => {
+    restoreQueueFromLocalStorage();
+});
         initializeVoiceSearch();
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";

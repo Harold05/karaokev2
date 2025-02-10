@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Karaoke Player Pro v2.7.1</title>
+
     <style>
 
 /* Add to CSS */
@@ -998,6 +1000,37 @@ function initializeVoiceSearch() {
     }
 }
 
+// Add new cleanup function
+function cleanupVoiceSearch() {
+
+    // Web Audio API restoration
+    if (sourceNode && gainNode) {
+        gainNode.gain.setValueAtTime(1.0, audioContext.currentTime); // Restore to 100%
+    }
+    // Fallback restoration
+    else {
+        player.setVolume(originalVolume); // Restore to stored original volume
+    }
+
+    // Restore audio
+    if (sourceNode && gainNode) {
+        gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
+    } else {
+        player.setVolume(100);
+    }
+    
+    // Clear any existing timeouts
+    clearTimeout(resumeTimeout);
+    
+    // Remove hidden audio elements
+    document.querySelectorAll('audio[data-voice-audio]').forEach(el => el.remove());
+    
+    // Restore playback state immediately
+    if (wasPlaying) {
+        player.playVideo();
+        showToast('Resuming playback...');
+    }
+}
 
 function handleVoiceCommand(transcript) {
     const addCommand = transcript.match(/add(?: to queue)?(?: number)? (\d+)/);
@@ -1122,14 +1155,10 @@ function cleanupVoiceSearch() {
     // Remove hidden audio elements
     document.querySelectorAll('audio[data-voice-audio]').forEach(el => el.remove());
     
-    // Restore playback state
+    // Restore playback state immediately
     if (wasPlaying) {
-        resumeTimeout = setTimeout(() => {
-            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
-                player.playVideo();
-                showToast('Resuming playback...');
-            }
-        }, getResumeDelay());
+        player.playVideo();
+        showToast('Resuming playback...');
     }
 }
 
@@ -1271,7 +1300,7 @@ async function handlePlaybackError() {
             toast.style.position = 'fixed';
             toast.style.bottom = '20px';
             toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
+            toast.style.transform = 'translateX(-50%';
             toast.style.backgroundColor = '#333';
             toast.style.color = '#fff';
             toast.style.padding = '15px 20px';

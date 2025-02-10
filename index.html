@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v2.7.1</title>
+    <title>Karaoke Player Pro v3.0.1</title>
     <style>
 
 /* Add to CSS */
@@ -40,19 +40,10 @@
     transform: scale(1.05);
 }
 
-.queue-item {
-    position: relative;
-    padding: 15px;
-    margin: 12px 0;
-    background: #2a2a2a;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
 
 .queue-item .name-tag {
     position: absolute;
-    top: 50px; /* Position the tag at the bottom */
+    top: 30px; /* Position the tag at the bottom */
     right: 10px; /* Position the tag at the right */
     padding: 5px 10px;
     border-radius: 8px;
@@ -61,6 +52,7 @@
     font-weight: bold;
     background-color: #007bff; /* Default color */
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    opacity: 80%;
     
 }
 .remove-btn i {
@@ -167,7 +159,7 @@
             background: #000;
         }
 
-        #search-panel, #queue-panel {
+        #search-panel {
             width: 20%;
             height: 100vh;
             display: flex;
@@ -185,13 +177,18 @@
             background: #000;
         }
 
-        #search-results, #queue-list {
+        #search-results {
             flex: 1;
             overflow-y: auto;
             margin-top: 15px;
         }
 
-        .search-result, .queue-item {
+        #queue-list {
+    display: flex; /* Enable horizontal layout */
+    gap: 10px; /* Space between queue items */
+}
+
+        .search-result {
             margin: 10px 0;
             padding: 15px;
             background: #333;
@@ -366,6 +363,102 @@
     font-weight: bold;
 }
 
+#queue-panel {
+    position: absolute; /* Allows dynamic positioning */
+    display: flex;
+    flex-direction: row;
+    height: 60px;
+    gap: 10px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.queue-item {
+    position: relative;
+    padding: 10px;
+    background: rgba(42, 42, 42, 0.7); /* Reduced opacity */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column; /* Stack content vertically within each item */
+    align-items: left; /* left-align content */
+    justify-content: space-between; /* Space out internal content */
+    width: 250px; /* Adjusted width for better proportions */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add slight shadow */
+    color: white; /* Set text color to white */
+}
+
+
+.queue-item:hover {
+    background: rgba(42, 42, 42, 0.9); /* Increase opacity on hover */
+}
+
+.queue-item .play-btn {
+    margin-bottom: 5px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 0;
+}
+.queue-item .play-btn:hover {
+    opacity: 1;
+}
+
+.queue-item .name-tag {
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    color: white;
+    font-weight: bold;
+    background-color: #007bff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.remove-btn {
+    margin-left: auto;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 12px; /* Ensure content fits */
+    line-height: 20px; /* Vertical alignment for text */
+    padding: 0; /* Remove any default padding */
+}
+.remove-btn:hover {
+    opacity: 1;
+}
+
+.queue-item .text-content {
+    text-align: center;
+    font-size: 0.85em;
+    margin-top: 5px; /* Space below the buttons and name tag */
+}
+
     </style>
 </head>
 <body>
@@ -390,22 +483,18 @@
         <div id="search-results"></div>
     </div>
 
-    <div id="main-player">
+    <div id="main-player" style="position: relative;">
         <div id="player"></div>
         <div id="voice-command-hint" style="margin-top: 20px;">
             <h3>Voice Command Guide</h3>
             <p id="voice-hint-text">Loading hints...</p>
         </div>
-        
-        
+    </div>
+    <div id="queue-panel">
+        <div id="queue-list"></div>
     </div>
     <div id="user-profiles-container">
         <div id="user-profiles"></div>
-    </div>
-
-    <div id="queue-panel">
-        <h2>📃 Queue List</h2>
-        <div id="queue-list"></div>
     </div>
 
     <script>
@@ -445,6 +534,27 @@
         // Add to existing variables
         let replacementAttempts = 0;
         let failedVideos = new Map(); // videoId: { count: number, timestamp: number }
+
+        function alignQueuePanel() {
+    const mainPlayer = document.getElementById('main-player');
+    const queuePanel = document.getElementById('queue-panel');
+
+    if (mainPlayer && queuePanel) {
+        const playerRect = mainPlayer.getBoundingClientRect();
+
+        // Align queue-panel with the top-left corner of main-player
+        queuePanel.style.top = `${playerRect.top + window.scrollY}px`; // Adjust for scrolling
+        queuePanel.style.left = `${playerRect.left + window.scrollX}px`; // Adjust for scrolling
+    }
+}
+
+// Call alignQueuePanel when the page loads
+document.addEventListener('DOMContentLoaded', alignQueuePanel);
+
+// Re-align queue-panel on window resize
+window.addEventListener('resize', alignQueuePanel);
+
+
 
         const nameColors = new Map(); // Map to store name-color pairs
 
@@ -827,16 +937,19 @@ function addToQueue(video, name = null) {
         const color = video.name ? getColorForName(video.name) : null; // Get a color for the name
         return `
             <div class="queue-item">
-                <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
                 <button class="play-btn" onclick="playVideoFromQueue(${index})">▶</button>
-                ${index === 0 ? 
-                    `<strong>🎶 Now Playing:</strong> ${video.title}` : 
-                    `<strong>#${index} Up Next:</strong> ${video.title}`}
                 ${video.name ? `<div class="name-tag" style="background-color: ${color};">${video.name}</div>` : ''}
+                <div class="text-content">
+                    ${index === 0 ? 
+                        `<strong>🎶 Now Playing:</strong> ${video.title}` : 
+                        `<strong>#${index} Up Next:</strong> ${video.title}`}
+                </div>
+                <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
             </div>
         `;
     }).join('');
 }
+
 
 function playVideoFromQueue(index) {
     const video = queue[index];

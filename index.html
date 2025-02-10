@@ -920,7 +920,7 @@ function addToQueue(video, name = null) {
                         <h4>${video.title}</h4>
                         <button 
                             onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')}, '${name}')">
-                            Add to Queue
+                            Reserve
                         </button>
                         ${name ? `<div class="name-tag" style="background-color: ${color};">${name}</div>` : ''}
                     </div>

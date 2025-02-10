@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v3.0.2</title>
+    <title>Karaoke Player Pro v3.1.0</title>
     <style>
 
 /* Add to CSS */
@@ -458,6 +458,22 @@
     font-size: 0.85em;
     margin-top: 5px; /* Space below the buttons and name tag */
 }
+
+.queue-item .text-content strong {
+    font-size: 0.9em;
+    color: white; /* Ensure the text is visible */
+}
+
+.queue-item .text-content {
+    text-align: center;
+    font-size: 0.9em;
+    line-height: 1.2;
+    margin-top: 10px; /* Space below the name tag */
+    overflow: hidden; /* Prevent overflow for long titles */
+    text-overflow: ellipsis; /* Show ellipsis for long text */
+    white-space: nowrap; /* Prevent wrapping */
+}
+
 
     </style>
 </head>
@@ -931,10 +947,14 @@ function addToQueue(video, name = null) {
         }
     }
 
-    function updateQueueDisplay() {
+function updateQueueDisplay() {
     const container = document.getElementById('queue-list');
-    container.innerHTML = queue.map((video, index) => {
-        const color = video.name ? getColorForName(video.name) : null; // Get a color for the name
+    const maxVisible = 4; // Maximum visible queue items
+    const visibleQueue = queue.slice(0, maxVisible); // Get the first 4 items
+    const hasMore = queue.length > maxVisible; // Check if there are more items
+
+    container.innerHTML = visibleQueue.map((video, index) => {
+        const color = video.name ? getColorForName(video.name) : null;
         return `
             <div class="queue-item">
                 <button class="play-btn" onclick="playVideoFromQueue(${index})">▶</button>
@@ -948,7 +968,19 @@ function addToQueue(video, name = null) {
             </div>
         `;
     }).join('');
+
+    // Add "More..." indicator if there are additional items in the queue
+    if (hasMore) {
+        container.innerHTML += `
+            <div class="queue-item">
+                <div class="text-content">
+                    <strong>More...</strong>
+                </div>
+            </div>
+        `;
+    }
 }
+
 
 
 function playVideoFromQueue(index) {

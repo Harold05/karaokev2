@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v3.1.0</title>
+    <title>Karaoke Player Pro v3.2.0</title>
     <style>
 
 /* Add to CSS */
@@ -472,6 +472,14 @@
     overflow: hidden; /* Prevent overflow for long titles */
     text-overflow: ellipsis; /* Show ellipsis for long text */
     white-space: nowrap; /* Prevent wrapping */
+}
+
+.queue-item.more-indicator {
+    width: 80px; /* Fixed width for "More..." indicator */
+    height: auto; /* Adjust height dynamically */
+    text-align: center;
+    padding: 10px;
+    background: rgba(42, 42, 42, 0.7); /* Same as other items */
 }
 
 
@@ -947,10 +955,10 @@ function addToQueue(video, name = null) {
         }
     }
 
-function updateQueueDisplay() {
+    function updateQueueDisplay() {
     const container = document.getElementById('queue-list');
-    const maxVisible = 4; // Maximum visible queue items
-    const visibleQueue = queue.slice(0, maxVisible); // Get the first 4 items
+    const maxVisible = 3; // Maximum visible queue items
+    const visibleQueue = queue.slice(0, maxVisible); // Get the first 3 items
     const hasMore = queue.length > maxVisible; // Check if there are more items
 
     container.innerHTML = visibleQueue.map((video, index) => {
@@ -972,7 +980,7 @@ function updateQueueDisplay() {
     // Add "More..." indicator if there are additional items in the queue
     if (hasMore) {
         container.innerHTML += `
-            <div class="queue-item">
+            <div class="queue-item more-indicator">
                 <div class="text-content">
                     <strong>More...</strong>
                 </div>

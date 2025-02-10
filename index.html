@@ -347,7 +347,7 @@ async function searchYouTube(query, options = {}) {
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         ); */
-        const response = fetchYouTubeVideos(processedQuery, excludeIds = []);
+        let response = fetchYouTubeVideos(processedQuery, excludeIds = []);
 
         const data = await response.json();
         return processVideoResults(data.items);

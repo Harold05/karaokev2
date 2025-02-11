@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.3.0</title>
+    <title>Karaoke Player Pro v4.3.1</title>
     <style>
 
 /* Add to CSS */
@@ -826,7 +826,7 @@ async function playNextVideo() {
         updateQueueDisplay();
     }
 
-    if (queue.length > 0) {
+    if (queue.length > 1) {
         await playVideo(queue[0]);
     } else {
         currentVideo = null;

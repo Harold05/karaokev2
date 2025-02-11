@@ -349,8 +349,7 @@ async function searchYouTube(query, options = {}) {
         ); */
         let ytresponse = await fetchYouTubeVideos(processedQuery, excludeIds);
 
-        const data = await ytresponse.json();
-        return processVideoResults(data.items);
+        return processVideoResults(ytresponse.items);
     } catch (error) {
         console.error('Search failed:', error);
         return [];

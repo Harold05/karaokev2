@@ -5,4 +5,4 @@
   package = "netlify-plugin-inline-functions-env"
 
 [functions]
-directory = "netlify/functions"
+directory = ".netlify/functions"

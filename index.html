@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.0.0 </title>
+    <title>Karaoke Player Pro v4.1.0 </title>
     <style>
 
 .queue-item {
@@ -358,7 +358,7 @@ async function searchYouTube(query, options = {}) {
 }
 
 async function fetchYouTubeVideos(processedQuery, excludeIds = []) {
-    const response = await fetch('/netlify/functions/youtube-proxy', {
+    const response = await fetch('/.netlify/functions/youtube-proxy', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

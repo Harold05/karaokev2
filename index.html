@@ -1215,7 +1215,7 @@ function initializeVoiceSearch() {
 
             // Handle "Add <ordinal> result" command
             const ordinalMap = { first: 0, second: 1, third: 2 };
-            const addCommand = transcript.match(/add (first|second|third) result/);
+            const addCommand = transcript.match(/reserve (first|second|third)/);
             if (addCommand) {
                 const resultIndex = ordinalMap[addCommand[1]];
                 if (resultIndex >= 0 && resultIndex < currentSearchResults.length) {

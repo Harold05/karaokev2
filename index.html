@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.4.0</title>
+    <title>Karaoke Player Pro v4.4.1</title>
     <style>
 
 /* Add to CSS */
@@ -732,7 +732,9 @@ async function searchYouTube(query, options = {}) {
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         ); */
-
+        if (excludeIds.length > 5) {
+            excludeIds = []; // Reset the excluded ids if their length exceeds 5
+        }
         let ytresponse = await fetchYouTubeVideos(processedQuery, excludeIds);
 
         return processVideoResults(ytresponse.items);
@@ -878,9 +880,15 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
         // Search YouTube for the suggestion
         const results = await searchYouTube(query);
 
-        if (results.length > 0) {
-            // Add the first result to the queue
-            const firstResult = results[0];
+        // Filter results to include only those with "karaoke" in the title or description
+        const karaokeResults = results.filter(video =>
+            video.title.toLowerCase().includes('karaoke') || 
+            (video.description && video.description.toLowerCase().includes('karaoke'))
+        );
+
+        if (karaokeResults.length > 0) {
+            // Add the first karaoke result to the queue
+            const firstResult = karaokeResults[0];
             addToQueue(firstResult);
             showToast(`"${firstResult.title}" added to queue!`);
 
@@ -889,14 +897,13 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
                 suggestionElement.remove();
             }
         } else {
-            showToast('No results found for the selected suggestion.');
+            showToast('No karaoke version found for the selected suggestion.');
         }
     } catch (error) {
         console.error('Error handling AI suggestion click:', error);
         showToast('Failed to process the suggestion. Please try again.');
     }
 }
-
 
 
         async function getAISongSuggestions(queue) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.4.3</title>
+    <title>Karaoke Player Pro v4.5.0</title>
     <style>
 
 /* Add to CSS */
@@ -674,6 +674,54 @@ window.addEventListener('resize', alignQueuePanel);
 
     // Show the first hint immediately
     showNextHint();
+}
+
+async function updateVoiceCommandHints(songTitle, artistName) {
+    const hints = [
+        'Perform Search: Say anything like "Play Adele songs."',
+        'To reserve a song on result list: Say "Reserve first", "Reserve second," or "Reserve third."',
+        'Tag search results to your name: Say like "Bruno Mars Song tag as [Name]" to associate a name with the search results.',
+    ];
+
+    // Fetch song facts from AI
+    const facts = await getSongFacts(songTitle, artistName);
+
+    // Combine hints and facts
+    const combinedHints = [...hints, ...facts.map(fact => `DID YOU KNOW? ${fact}`)];
+
+    const hintContainer = document.getElementById('voice-command-hints');
+    let currentIndex = 0;
+
+    // Update the rolling hints
+    setInterval(() => {
+        hintContainer.textContent = combinedHints[currentIndex];
+        currentIndex = (currentIndex + 1) % combinedHints.length;
+    }, 5000); // Change hint every 5 seconds
+}
+
+
+async function getSongFacts(songTitle, artistName) {
+    try {
+        const prompt = `Provide 5 interesting facts about the song "${songTitle}" by "${artistName}". Each fact should be concise and factual.`;
+
+        const response = await fetch('/.netlify/functions/ai-song-facts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`AI Song Facts Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.facts || [];
+    } catch (error) {
+        console.error('Error fetching song facts:', error);
+        return [];
+    }
 }
 
 // Initialize the hints when the page loads
@@ -1455,7 +1503,7 @@ function onPlayerReady(event) {
         }
 
         // Add to existing playVideo function
-        function playVideo(video) {
+        async function playVideo(video) {
 
             if (audioContext && audioContext.state !== 'running') {
                 audioContext.resume();
@@ -1469,6 +1517,7 @@ function onPlayerReady(event) {
             retryCount = 0;
             currentVideo = video;
             player.loadVideoById(video.videoId);
+            await updateVoiceCommandHints(video.title, video.channel);
         }
 
             // Add cleanup function
@@ -1557,7 +1606,7 @@ function addToQueue(video, name = null) {
         queue.push({ ...video, name });
         addedVideoIds.add(video.videoId);
         updateQueueDisplay();
-        showToast(`"${video.title}" added to queue`);
+        showToast(`"${video.title}" added to reserve list`);
         saveQueueToLocalStorage();
         
         // Remove the video from search results

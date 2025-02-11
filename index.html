@@ -841,11 +841,10 @@ async function playNextVideo() {
 }
 
 
-// Function to display AI suggestions in the UI
-function displayAISuggestions(suggestions) {
+function displayAISuggestions({ header, suggestions }) {
     const container = document.getElementById('search-results');
     container.innerHTML = `
-        <div class="suggestion-header">AI Song Suggestions</div>
+        <div class="suggestion-header">${header}</div>
         ${suggestions.map((suggestion, index) => `
             <div class="search-result" tabindex="0" id="ai-suggestion-${index}">
                 <div class="text-content">${suggestion}</div>
@@ -853,6 +852,7 @@ function displayAISuggestions(suggestions) {
         `).join('')}
     `;
 }
+
 
 
         async function getAISongSuggestions(queue) {

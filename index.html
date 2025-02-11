@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.5.0</title>
+    <title>Karaoke Player Pro v4.5.1</title>
     <style>
 
 /* Add to CSS */
@@ -683,7 +683,7 @@ async function updateVoiceCommandHints(songTitle, artistName) {
         'Tag search results to your name: Say like "Bruno Mars Song tag as [Name]" to associate a name with the search results.',
     ];
 
-    // Fetch song facts from AI
+    // Fetch cleaned song facts from AI
     const facts = await getSongFacts(songTitle, artistName);
 
     // Combine hints and facts
@@ -694,8 +694,10 @@ async function updateVoiceCommandHints(songTitle, artistName) {
 
     // Update the rolling hints
     setInterval(() => {
-        hintContainer.textContent = combinedHints[currentIndex];
-        currentIndex = (currentIndex + 1) % combinedHints.length;
+        if (hintContainer) {
+            hintContainer.textContent = combinedHints[currentIndex];
+            currentIndex = (currentIndex + 1) % combinedHints.length;
+        }
     }, 5000); // Change hint every 5 seconds
 }
 
@@ -717,12 +719,19 @@ async function getSongFacts(songTitle, artistName) {
         }
 
         const data = await response.json();
-        return data.facts || [];
+
+        // Parse and clean the facts: remove blanks and skip the introductory line
+        const facts = data.facts
+            .filter((fact, index) => fact.trim() !== '' && index !== 0)
+            .map(fact => fact.trim());
+
+        return facts;
     } catch (error) {
         console.error('Error fetching song facts:', error);
         return [];
     }
 }
+
 
 // Initialize the hints when the page loads
 document.addEventListener('DOMContentLoaded', initializeVoiceCommandHints);

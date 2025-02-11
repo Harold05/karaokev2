@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', initializeVoiceCommandHints);
 // Update searchYouTube function to exclude added videos
 async function searchYouTube(query, options = {}) {
     try {
-        const apiKey = getNextApiKey(); // Get the next API key in rotation
+        //const apiKey = getNextApiKey(); // Get the next API key in rotation
         const processedQuery = query.toLowerCase().includes('karaoke') ? 
             query : `${query} karaoke`;
         
@@ -827,7 +827,7 @@ function addToQueue(video, name = null) {
     // Enhanced suggestion system
     async function showSuggestions() {
         try {
-            const apiKey = getNextApiKey(); // Get the next API key in rotation
+            //const apiKey = getNextApiKey(); // Get the next API key in rotation
             let suggestions = [];
             let suggestionHeader = 'Popular Karaoke Songs';
             

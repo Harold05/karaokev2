@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.5.1</title>
+    <title>Karaoke Player Pro v4.5.2</title>
     <style>
 
 /* Add to CSS */
@@ -643,12 +643,13 @@ window.addEventListener('resize', alignQueuePanel);
         }
 
         function initializeVoiceCommandHints() {
-    const hints = [
+    const defaultHints = [
         'Perform Search: Say anything like "Play Adele songs."',
         'To reserve a song on result list: Say "Reserve first", "Reserve second," or "Reserve third."',
         'Tag search results to your name: Say like "Bruno Mars Song tag as [Name]" to associate a name with the search results.',
     ];
 
+    let hints = [...defaultHints]; // Start with default hints
     let currentHintIndex = 0;
     const hintTextElement = document.getElementById('voice-hint-text');
 
@@ -670,11 +671,23 @@ window.addEventListener('resize', alignQueuePanel);
     }
 
     // Start cycling hints every 10 seconds
-    setInterval(showNextHint, 10000);
+    const hintInterval = setInterval(showNextHint, 10000);
 
     // Show the first hint immediately
     showNextHint();
+
+    // Public method to update hints
+    return {
+        updateHints: (newHints) => {
+            hints = [...defaultHints, ...newHints.map(fact => `DID YOU KNOW? ${fact}`)];
+            currentHintIndex = 0; // Reset to start from the beginning
+        },
+        stopHints: () => {
+            clearInterval(hintInterval);
+        },
+    };
 }
+
 
 async function updateVoiceCommandHints(songTitle, artistName) {
     const hints = [

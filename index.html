@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.3.3</title>
+    <title>Karaoke Player Pro v4.3.4</title>
     <style>
 
 /* Add to CSS */
@@ -837,7 +837,11 @@ async function playNextVideo() {
     const aiSuggestions = await getAISongSuggestions(
         queue.map(video => `${video.title}`)
     );
-    displayAISuggestions(aiSuggestions.header, aiSuggestions.suggestions);
+
+    let aiSuggestionHeader = aiSuggestions.header;
+    let aiSuggestionsList = aiSuggestions.suggestions;
+    
+    displayAISuggestions(aiSuggestionHeader, aiSuggestionsList);
 }
 
 

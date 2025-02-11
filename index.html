@@ -702,7 +702,7 @@ async function updateVoiceCommandHints(songTitle, artistName) {
     // Combine hints and facts
     const combinedHints = [...hints, ...facts.map(fact => `DID YOU KNOW? ${fact}`)];
 
-    const hintContainer = document.getElementById('voice-command-hints');
+    const hintContainer = document.getElementById('voice-command-hint');
     let currentIndex = 0;
 
     // Update the rolling hints

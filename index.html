@@ -3,27 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.1.2 </title>
+    <title>Karaoke Player Pro v4.2.0</title>
     <style>
 
-.queue-item {
-    position: relative;
+/* Add to CSS */
+#user-profiles-container {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
     padding: 15px;
-    margin: 12px 0;
-    background: #2a2a2a;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    max-width: 80%;
 }
 
+#user-profiles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.name-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: transform 0.2s;
+    color: white;
+}
+
+.name-pill:hover {
+    transform: scale(1.05);
+}
+
+
+.queue-item .name-tag {
+    position: absolute;
+    top: 30px; /* Position the tag at the bottom */
+    right: 10px; /* Position the tag at the right */
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    color: white;
+    font-weight: bold;
+    background-color: #007bff; /* Default color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    opacity: 80%;
+    
+}
 .remove-btn i {
     font-size: 12px; /* Adjust icon size */
 }
 
 .remove-btn {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 10px;
+    right: 10px;
     background: #ff4444;
     color: white;
     border: none;
@@ -72,6 +111,20 @@
     backdrop-filter: blur(5px);
 }
 
+.name-tag {
+    position: absolute;
+    top: 10px; /* Position the tag at the bottom */
+    right: 10px; /* Position the tag at the right */
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    color: white;
+    font-weight: bold;
+    background-color: #007bff; /* Default color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
         /* Add subtle animation for voice search */
         @keyframes voice-active {
             0% { background-color: #007bff; }
@@ -83,10 +136,13 @@
             animation: voice-active 1s infinite;
         }
          
-        /* Add transition for smooth removal */
         .search-result {
-            transition: all 0.3s ease;
-            opacity: 1;
+            position: relative; /* Ensure relative positioning for child elements */
+            padding: 15px;
+            margin: 12px 0;
+            background: #333;
+            border-radius: 8px;
+            transition: transform 0.2s;
         }
 
         .search-result.removing {
@@ -103,7 +159,7 @@
             background: #000;
         }
 
-        #search-panel, #queue-panel {
+        #search-panel {
             width: 20%;
             height: 100vh;
             display: flex;
@@ -121,13 +177,18 @@
             background: #000;
         }
 
-        #search-results, #queue-list {
+        #search-results {
             flex: 1;
             overflow-y: auto;
             margin-top: 15px;
         }
 
-        .search-result, .queue-item {
+        #queue-list {
+    display: flex; /* Enable horizontal layout */
+    gap: 10px; /* Space between queue items */
+}
+
+        .search-result {
             margin: 10px 0;
             padding: 15px;
             background: #333;
@@ -145,6 +206,48 @@
             border-radius: 4px;
             margin-right: 15px;
         }
+
+    .search-results .name-tag {
+    position: absolute;
+    top: 10px; /* Position the tag at the top */
+    right: 10px; /* Position the tag at the right */
+    padding: 5px 10px; /* Add compact padding */
+    border-radius: 8px; /* Rounded corners */
+    font-size: 0.8em; /* Small text */
+    color: white;
+    font-weight: bold;
+    background-color: #007bff; /* Default color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Text shadow for better visibility */
+    z-index: 1; /* Ensure it appears above other content */
+    display: inline-block; /* Prevent stretching */
+    height: auto; /* Ensure height adjusts to content */
+    line-height: normal; /* Prevent vertical stretching */
+    white-space: nowrap; /* Keep text on one line */
+}
+
+.queue-item .play-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 0;
+}
+.queue-item .play-btn:hover {
+    opacity: 1;
+}
 
         #player {
             width: 100%;
@@ -210,13 +313,189 @@
             margin: 15px 0;
             font-size: 0.9em;
         }
+        #voice-command-hint {
+    background-color: #333;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px 15px; /* Reduced padding */
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4; /* Reduced line height */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#voice-command-hint h3 {
+    margin-top: 0;
+    margin-bottom: 5px; /* Reduced margin between heading and text */
+    font-size: 15px; /* Slightly smaller font size */
+    font-weight: bold;
+    color: #00bfff;
+}
+
+#voice-hint-text {
+    opacity: 0; /* Start invisible */
+    transform: translateY(20px); /* Start below */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    margin-top: 0; /* No margin above the hint text */
+}
+
+
+#voice-indicator {
+    position: fixed;
+    top: 92px;
+    left: 30px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+}
+
+#voice-timer {
+    color: #ff4500; /* Highlight the timer */
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#queue-panel {
+    position: absolute; /* Allows dynamic positioning */
+    display: flex;
+    flex-direction: row;
+    height: 60px;
+    gap: 10px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.queue-item {
+    position: relative;
+    padding: 10px;
+    background: rgba(42, 42, 42, 0.7); /* Reduced opacity */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column; /* Stack content vertically within each item */
+    align-items: left; /* left-align content */
+    justify-content: space-between; /* Space out internal content */
+    width: 250px; /* Adjusted width for better proportions */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add slight shadow */
+    color: white; /* Set text color to white */
+}
+
+
+.queue-item:hover {
+    background: rgba(42, 42, 42, 0.9); /* Increase opacity on hover */
+}
+
+.queue-item .play-btn {
+    margin-bottom: 5px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 0;
+}
+.queue-item .play-btn:hover {
+    opacity: 1;
+}
+
+.queue-item .name-tag {
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    color: white;
+    font-weight: bold;
+    background-color: #007bff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.remove-btn {
+    margin-left: auto;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 12px; /* Ensure content fits */
+    line-height: 20px; /* Vertical alignment for text */
+    padding: 0; /* Remove any default padding */
+}
+.remove-btn:hover {
+    opacity: 1;
+}
+
+.queue-item .text-content {
+    text-align: center;
+    font-size: 0.85em;
+    margin-top: 5px; /* Space below the buttons and name tag */
+}
+
+.queue-item .text-content strong {
+    font-size: 0.9em;
+    color: white; /* Ensure the text is visible */
+}
+
+.queue-item .text-content {
+    text-align: center;
+    font-size: 0.9em;
+    line-height: 1.2;
+    margin-top: 10px; /* Space below the name tag */
+    overflow: hidden; /* Prevent overflow for long titles */
+    text-overflow: ellipsis; /* Show ellipsis for long text */
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+.queue-item.more-indicator {
+    width: 80px; /* Fixed width for "More..." indicator */
+    height: auto; /* Adjust height dynamically */
+    text-align: center;
+    padding: 10px;
+    background: rgba(42, 42, 42, 0.7); /* Same as other items */
+}
+
+
     </style>
 </head>
 <body>
     <div id="search-panel">
+        <div id="voice-indicator" style="display: none;">
+            <span>Speak now</span>
+            <span id="voice-timer">5</span>s
+        </div>
         <h2>🎤 Search Karaoke</h2>
         <div class="search-container">
             <form id="search-form">
+                
+                
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="search-input" placeholder="Say or type a song...">
                     <button type="button" id="voice-search" title="Voice Search">🎤</button>
@@ -228,23 +507,29 @@
         <div id="search-results"></div>
     </div>
 
-    <div id="main-player">
+    <div id="main-player" style="position: relative;">
         <div id="player"></div>
+        <div id="voice-command-hint" style="margin-top: 20px;">
+            <h3>Voice Command Guide</h3>
+            <p id="voice-hint-text">Loading hints...</p>
+        </div>
     </div>
-
     <div id="queue-panel">
-        <h2>📃 Queue List</h2>
         <div id="queue-list"></div>
+    </div>
+    <div id="user-profiles-container">
+        <div id="user-profiles"></div>
     </div>
 
     <script>
-        const YT_API_KEYS = ['YT_API_KEY1', 'YT_API_KEY2', 'YT_API_KEY3', 'YT_API_KEY4'];
+        const YT_API_KEYS = ['AIzaSyBw8YJYBsq2wBHafYpAUhncN98Mg7YYmRM', 'AIzaSyBfjtDjII62pyMRA6_Nx66gPkNk8ORg4Z0', 'AIzaSyDqHQFWXmYB2PzHzTq8enfm16cnalljKE0', 'AIzaSyDAuiTHj5zY6rh0TSzmDcKGoDmjNDlAEbI'];
         let currentKeyIndex = 0; // Initialize the index to track the current key
         let player;
         let queue = [];
         let currentVideo = null;
         let retryCount = 0;
         const MAX_RETRIES = 2;
+        const MAX_USERS = 5;
         // Add these constants at the top
         const MAX_SINGLE_RETRIES = 2; // Max replacements per video
         const MAX_TOTAL_RETRIES = 5;  // Max total replacement attempts
@@ -257,9 +542,11 @@
         let addedVideoIds = new Set();
         let currentSearchResults = [];
         let currentSearchHeader = '';
-
         let wasPlaying = false;
         let originalVolume = 100;
+
+        //Voice profiles
+        let voiceProfiles = JSON.parse(localStorage.getItem('voiceProfiles') || '{}');
 
         // Add these variables at the top
         let audioContext;
@@ -271,6 +558,56 @@
         // Add to existing variables
         let replacementAttempts = 0;
         let failedVideos = new Map(); // videoId: { count: number, timestamp: number }
+
+        function alignQueuePanel() {
+    const mainPlayer = document.getElementById('main-player');
+    const queuePanel = document.getElementById('queue-panel');
+
+    if (mainPlayer && queuePanel) {
+        const playerRect = mainPlayer.getBoundingClientRect();
+
+        // Align queue-panel with the top-left corner of main-player
+        queuePanel.style.top = `${playerRect.top + window.scrollY}px`; // Adjust for scrolling
+        queuePanel.style.left = `${playerRect.left + window.scrollX}px`; // Adjust for scrolling
+    }
+}
+
+// Call alignQueuePanel when the page loads
+document.addEventListener('DOMContentLoaded', alignQueuePanel);
+
+// Re-align queue-panel on window resize
+window.addEventListener('resize', alignQueuePanel);
+
+
+
+        const nameColors = new Map(); // Map to store name-color pairs
+
+        // Utility function to get or assign a color for a name
+        function getColorForName(name) {
+            if (!nameColors.has(name)) {
+                // Generate a random color
+                const randomColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 80%)`;
+                nameColors.set(name, randomColor);
+            }
+            return nameColors.get(name);
+        }
+
+
+        // Modified extractName function
+        function extractName(query) {
+            // Check for registration phrase
+            const regMatch = query.match(/hi my name is (\w+)/i);
+            if (regMatch) return {name: regMatch[1], isRegistration: true};
+            
+            // Existing tag as detection
+            const tagMatch = query.match(/tag as (\w+)/i);
+            return {name: tagMatch?.[1], isRegistration: false};
+        }
+
+        function cleanQuery(query) {
+            return query.replace(/tag as\s+\w+/i, '').trim(); // Remove "tag as [name]" from the query
+        }
+
 
         // YouTube Player Initialization
         function onYouTubeIframeAPIReady() {
@@ -306,20 +643,69 @@
             handlePlaybackError();
         }
 
-        // Search Functionality
+        function initializeVoiceCommandHints() {
+    const hints = [
+        'Perform Search: Say anything like "Play Adele songs."',
+        'You can Add Result to Queue: Say "Add first result", "Add second result," or "Add third result."',
+        'Tag search results to your name: Say like "Bruno Mars Song tag as [Name]" to associate a name with the search results.',
+    ];
+
+    let currentHintIndex = 0;
+    const hintTextElement = document.getElementById('voice-hint-text');
+
+    function showNextHint() {
+        // Fade out current hint
+        hintTextElement.style.opacity = '0';
+        hintTextElement.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            // Update hint text
+            hintTextElement.textContent = hints[currentHintIndex];
+            // Fade in new hint
+            hintTextElement.style.opacity = '1';
+            hintTextElement.style.transform = 'translateY(0)';
+
+            // Move to the next hint
+            currentHintIndex = (currentHintIndex + 1) % hints.length;
+        }, 500); // Wait for fade-out animation to complete
+    }
+
+    // Start cycling hints every 10 seconds
+    setInterval(showNextHint, 10000);
+
+    // Show the first hint immediately
+    showNextHint();
+}
+
+// Initialize the hints when the page loads
+document.addEventListener('DOMContentLoaded', initializeVoiceCommandHints);
+
+
+        /* // Search Functionality
         document.getElementById('search-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             toggleLoading(true);
             try {
                 const query = document.getElementById('search-input').value;
-                const results = await searchYouTube(query);
-                displayResults(results, 'Search Results');
+                const name = extractName(query); // Extract the name (if any)
+                const processedQuery = cleanQuery(query); // Clean the query for actual search
+
+                const results = await searchYouTube(processedQuery); // Search with the cleaned query
+                displayResults(results, 'Search Results', name); // Pass the name for tagging
+
             } catch (error) {
                 console.error('Search error:', error);
             } finally {
                 toggleLoading(false);
             }
-        });
+        }); */
+
+        document.getElementById('search-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('search-input').value;
+    const name = extractName(query).name; // Get name from "tag as" command
+    performSearch(cleanQuery(query), name);
+});
  // Function to get the next API key in rotation
  function getNextApiKey() {
             const key = YT_API_KEYS[currentKeyIndex];
@@ -341,12 +727,13 @@ async function searchYouTube(query, options = {}) {
         ].filter(Boolean);
 
        /*  const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10` +
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3` +
             `&q=${encodeURIComponent(processedQuery)}` +
             `&type=video&key=${apiKey}` +
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         ); */
+
         let ytresponse = await fetchYouTubeVideos(processedQuery, excludeIds);
 
         return processVideoResults(ytresponse.items);
@@ -354,23 +741,6 @@ async function searchYouTube(query, options = {}) {
         console.error('Search failed:', error);
         return [];
     }
-}
-
-async function fetchYouTubeVideos(processedQuery, excludeIds = []) {
-    const response = await fetch('/.netlify/functions/youtube-proxy', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ processedQuery, excludeIds }),
-    });
-
-    if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
 }
 
         // Updated processVideoResults function
@@ -408,33 +778,30 @@ async function handleUnavailableVideo(errorIndex) {
     }
     return false;
 }
-        // Modified addToQueue function
-        function addToQueue(video) {
-            if (!queue.some(v => v.videoId === video.videoId)) {
-                queue.push(video);
-                addedVideoIds.add(video.videoId);
-                updateQueueDisplay();
-                
-                // Immediately remove from visible results
-                const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
-                if (resultItem) {
-                    resultItem.remove();
-                    // Show updated count
-                    const remaining = document.querySelectorAll('.search-result').length;
-                    document.querySelector('.suggestion-header').innerHTML = 
-                        `${currentSearchHeader} (${remaining} remaining)`;
-                }
+function addToQueue(video, name = null) {
+    if (!queue.some(v => v.videoId === video.videoId)) {
+        queue.push({ ...video, name }); // Add the video to the queue with the name tag (if any)
+        addedVideoIds.add(video.videoId);
+        updateQueueDisplay();
+        showToast(`"${video.title}" added to queue`);
 
-                if (!currentVideo) {
-                    playVideo(video);
-                }
-                
-                // Temporarily keep in added list
-                setTimeout(() => {
-                    addedVideoIds.delete(video.videoId)
-                }, SEARCH_RESULT_TTL);
-            }
+        // Remove the video from search results
+        const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
+        if (resultItem) {
+            resultItem.remove();
         }
+
+        if (!currentVideo) {
+            playVideo(queue[0]); // Start playing if nothing is currently playing
+        }
+
+         // Focus back on the voice search button
+         const voiceSearchButton = document.getElementById('voice-search');
+        if (voiceSearchButton) {
+            voiceSearchButton.focus();
+        }
+    }
+}
 
 
       // Modified playNextVideo function
@@ -472,10 +839,10 @@ async function handleUnavailableVideo(errorIndex) {
                 /* const response = await fetch(
                     `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5` +
                     `&q=${encodeURIComponent(extractedArtist + ' karaoke')}&type=video&key=${apiKey}&cache=${Date.now()}`
-                ); */
-                let ytresponse = await fetchYouTubeVideos(extractedArtist);
+                );
+                const data = await response.json(); */
 
-                //const data = await response.json();
+                let ytresponse = await fetchYouTubeVideos(extractedArtist);
                 suggestions = processVideoResults(ytresponse.items);
                 suggestionHeader = 'Based on Recent Songs';
             }
@@ -498,44 +865,85 @@ async function handleUnavailableVideo(errorIndex) {
         }
     }
 
-     // Modified displayResults function
-    function displayResults(results, headerText = 'Results') {
-        currentSearchResults = results;
-        currentSearchHeader = headerText;
-        
-        const filteredResults = results.filter(video => 
-            !addedVideoIds.has(video.videoId) &&
-            !queue.some(q => q.videoId === video.videoId)
-        );
-
-        const container = document.getElementById('search-results');
-        if (filteredResults.length === 0) {
-            container.innerHTML = `
-                <div class="suggestion-header">${headerText}</div>
-                <div class="no-results">
-                    <p>No results found</p>
-                    ${headerText === 'Search Results' ? 
-                        '<button onclick="searchPopular()">Show Popular Songs</button>' : ''}
-                </div>
-            `;
-            return;
+    // Modified search function with cache busting
+    async function getSuggestedVideos() {
+        try {
+            if (!currentVideo) return [];
+            
+            const response = await fetch(
+                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3` +
+                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${YT_API_KEY}&cache=${Date.now()}`
+            );
+            
+            const data = await response.json();
+            return processVideoResults(data.items).filter(video => 
+                !video.title.toLowerCase().includes('original') &&
+                (video.title.toLowerCase().includes('karaoke') ||
+                video.title.toLowerCase().includes('lyrics'))
+            );
+        } catch (error) {
+            console.error('Suggestions fetch failed:', error);
+            return [];
         }
+    }
 
+    function displayResults(results, headerText = 'Results', name = null) {
+    currentSearchResults = results;
+    currentSearchHeader = headerText;
+
+    const filteredResults = results.filter(video =>
+        !addedVideoIds.has(video.videoId) &&
+        !queue.some(q => q.videoId === video.videoId)
+    );
+
+    const container = document.getElementById('search-results');
+    if (filteredResults.length === 0) {
         container.innerHTML = `
             <div class="suggestion-header">${headerText}</div>
-            ${filteredResults.map(video => `
-                <div class="search-result" data-video-id="${video.videoId}">
+            <div class="no-results">
+                <p>No results found</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="suggestion-header">${headerText}</div>
+        ${filteredResults.map((video, index) => {
+            const color = name ? getColorForName(name) : null; // Get a color if a name is provided
+            return `
+                <div 
+                    class="search-result" 
+                    style="position: relative;" 
+                    data-video-id="${video.videoId}" 
+                    tabindex="0" 
+                    id="search-result-${index}">
                     <img src="${video.thumbnail}" alt="${video.title}">
                     <div>
                         <h4>${video.title}</h4>
-                        <button onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')})">
-                            Add to Queue
+                        <button 
+                            onclick="addToQueue(${JSON.stringify(video).replace(/"/g, '&quot;')}, '${name}')">
+                            Reserve
                         </button>
+                        ${name ? `<div class="name-tag" style="background-color: ${color};">${name}</div>` : ''}
                     </div>
                 </div>
-            `).join('')}
-        `;
+            `;
+        }).join('')}
+    `;
+
+    // Focus on the first search result
+    const firstResult = document.getElementById('search-result-0');
+    if (firstResult) {
+        firstResult.focus();
     }
+}
+
+
+
+
+
+
 
     // Add popular songs fallback
     async function searchPopular() {
@@ -550,18 +958,52 @@ async function handleUnavailableVideo(errorIndex) {
         }
     }
 
-        // Modified updateQueueDisplay function
-function updateQueueDisplay() {
+    function updateQueueDisplay() {
     const container = document.getElementById('queue-list');
-    container.innerHTML = queue.map((video, index) => `
-        <div class="queue-item">
-            <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
-            ${index === 0 ? 
-                `<strong>🎶 Now Playing:</strong> ${video.title}` : 
-                `<strong>#${index} Up Next:</strong> ${video.title}`}
-        </div>
-    `).join('');
+    const maxVisible = 3; // Maximum visible queue items
+    const visibleQueue = queue.slice(0, maxVisible); // Get the first 3 items
+    const hasMore = queue.length > maxVisible; // Check if there are more items
+
+    container.innerHTML = visibleQueue.map((video, index) => {
+        const color = video.name ? getColorForName(video.name) : null;
+        return `
+            <div class="queue-item">
+                <button class="play-btn" onclick="playVideoFromQueue(${index})">▶</button>
+                ${video.name ? `<div class="name-tag" style="background-color: ${color};">${video.name}</div>` : ''}
+                <div class="text-content">
+                    ${index === 0 ? 
+                        `<strong>🎶 Now Playing:</strong> ${video.title}` : 
+                        `<strong>#${index} Up Next:</strong> ${video.title}`}
+                </div>
+                <button class="remove-btn" onclick="removeFromQueue(${index})">×</button>
+            </div>
+        `;
+    }).join('');
+
+    // Add "More..." indicator if there are additional items in the queue
+    if (hasMore) {
+        container.innerHTML += `
+            <div class="queue-item more-indicator">
+                <div class="text-content">
+                    <strong>More...</strong>
+                </div>
+            </div>
+        `;
+    }
 }
+
+
+
+function playVideoFromQueue(index) {
+    const video = queue[index];
+    queue.splice(index, 1);
+    queue.unshift(video);
+    updateQueueDisplay();
+    playVideo(video);
+}
+
+
+
 
 // Add new remove function
 function removeFromQueue(index) {
@@ -580,14 +1022,43 @@ function removeFromQueue(index) {
     updateQueueDisplay();
 }
 
-        // Voice Search Implementation
-        // Modified voice search initialization
-// Modified voice search initialization
 function initializeVoiceSearch() {
     if ('webkitSpeechRecognition' in window) {
         const recognition = new webkitSpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
+
+        let isListening = false; // Track if currently listening
+        let countdownInterval; // Interval for the countdown timer
+
+        const showSpeakNowIndicator = () => {
+            const indicator = document.getElementById('voice-indicator');
+            const timer = document.getElementById('voice-timer');
+            let countdown = 5;
+
+            indicator.style.display = 'flex'; // Show the indicator
+            timer.textContent = countdown; // Set initial timer value
+
+            // Start countdown
+            countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval); // Clear the timer
+                    indicator.style.display = 'none'; // Hide the indicator when time is up
+                } else {
+                    timer.textContent = countdown; // Update the timer
+                }
+            }, 1000);
+        };
+
+        // Hide the "Speak now" indicator
+        const hideSpeakNowIndicator = () => {
+            clearInterval(countdownInterval); // Clear any running interval
+            const indicator = document.getElementById('voice-indicator');
+            indicator.style.display = 'none'; // Hide the indicator
+        };
 
         // Initialize Web Audio API
         try {
@@ -598,46 +1069,213 @@ function initializeVoiceSearch() {
             console.log('Web Audio API not supported');
         }
 
-        recognition.onstart = async () => {
-    wasPlaying = player.getPlayerState() === YT.PlayerState.PLAYING;
-    originalVolume = player.getVolume(); // Store original volume
-    
-    // Reduce volume by 20% (e.g., 100% → 80%, 50% → 40%)
-    const reducedVolume = Math.max(originalVolume * 0.8, 20); // Never go below 20%
-    
-    // Web Audio API version (if available)
-    if (sourceNode && gainNode) {
-        gainNode.gain.setValueAtTime(0.8, audioContext.currentTime); // 0.8 = 80% volume
-    } 
-    // Fallback for browsers without Web Audio API
-    else {
-        player.setVolume(reducedVolume);
-    }
-    
-    schedulePlaybackResume();
-};
 
-        recognition.onresult = (event) => {
-            cleanupVoiceSearch();
-            const transcript = event.results[0][0].transcript;
-            const searchInput = document.getElementById('search-input');
-            searchInput.value = transcript;
-            
-            // Automatically trigger search
+        // When recognition starts
+        recognition.onstart = async () => {
+            isListening = true;
+            console.log("Voice recognition started");
+            showSpeakNowIndicator(); // Show the indicator
+
+            wasPlaying = player.getPlayerState() === YT.PlayerState.PLAYING;
+            originalVolume = player.getVolume(); // Store original volume
+
+            // Reduce volume by 20% (e.g., 100% → 80%, 50% → 40%)
+            const reducedVolume = Math.max(originalVolume * 0.8, 20); // Never go below 20%
+
+            // Web Audio API version (if available)
+            if (sourceNode && gainNode) {
+                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime); // 0.8 = 80% volume
+            } 
+            // Fallback for browsers without Web Audio API
+            else {
+                player.setVolume(reducedVolume);
+            }
+
+            schedulePlaybackResume();
+
             setTimeout(() => {
-                document.getElementById('search-form').dispatchEvent(new Event('submit'));
-            }, 300); // Short delay to ensure input is updated
+                if (isListening) {
+                    recognition.stop(); // Stop listening after 5 seconds
+                    console.log("Voice recognition timed out after 5 seconds");
+                }
+            }, 5000);
         };
 
-        recognition.onerror = cleanupVoiceSearch;
-        recognition.onend = cleanupVoiceSearch;
+        // Handle the voice result
+        recognition.onresult = (event) => {
+            isListening = false; // Mark listening as complete
+            cleanupVoiceSearch();
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            console.log(`Voice recognized: ${transcript}`);
 
+            // Update search bar with transcript
+            const searchInput = document.getElementById('search-input');
+            searchInput.value = transcript;
+
+            // Handle "tag as <name>" command
+            const tagCommand = transcript.match(/tag as (\w+)/);
+            if (tagCommand) {
+                const name = tagCommand[1];
+                console.log(`Tagging as: ${name}`);
+                const cleanedQuery = cleanQuery(transcript); // Remove "tag as <name>"
+                searchInput.value = cleanedQuery; // Update the search bar with the cleaned query
+                performSearch(cleanedQuery, name); // Perform search with cleaned query and name
+                return; // Stop further processing
+            }
+
+            // Handle "tag as <name>" command
+            const tagCommand2 = transcript.match(/tagged as (\w+)/);
+            if (tagCommand2) {
+                const name = tagCommand2[1];
+                console.log(`Tagging as: ${name}`);
+                const cleanedQuery = cleanQuery(transcript); // Remove "tag as <name>"
+                searchInput.value = cleanedQuery; // Update the search bar with the cleaned query
+                performSearch(cleanedQuery, name); // Perform search with cleaned query and name
+                return; // Stop further processing
+            }
+
+            // Handle "Add <ordinal> result" command
+            const ordinalMap = { first: 0, second: 1, third: 2 };
+            const addCommand = transcript.match(/add (first|second|third) result/);
+            if (addCommand) {
+                const resultIndex = ordinalMap[addCommand[1]];
+                if (resultIndex >= 0 && resultIndex < currentSearchResults.length) {
+                    const video = currentSearchResults[resultIndex];
+                    addToQueue(video);
+                    showToast(`Added "${video.title}" to queue`);
+                } else {
+                    showToast("Invalid result. Please choose a valid search result.");
+                }
+                return; // Stop further processing
+            }
+
+            // If no special command is detected, perform a voice search
+            performSearch(transcript);
+        };
+
+        // Handle errors
+        recognition.onerror = (event) => {
+            isListening = false;
+            console.error("Voice recognition error:", event.error);
+            cleanupVoiceSearch();
+        };
+
+        // Handle when recognition stops
+        recognition.onend = () => {
+            isListening = false;
+            console.log("Voice recognition stopped");
+            cleanupVoiceSearch();
+        };
+
+        // Attach event listener to the voice search button
         document.getElementById('voice-search').addEventListener('click', () => {
-            recognition.start();
+            if (isListening) {
+                recognition.stop(); // Stop if already listening
+            } else {
+                recognition.start(); // Start voice recognition
+            }
         });
     } else {
-        document.getElementById('voice-search').disabled = true;
+        console.warn('Voice recognition is not supported in this browser.');
     }
+}
+
+function handleVoiceCommand(transcript) {
+    const addCommand = transcript.match(/add(?: to queue)?(?: number)? (\d+)/);
+    if (addCommand) {
+        const resultIndex = parseInt(addCommand[1], 10) - 1; // Convert 1-based index to 0-based
+        if (resultIndex >= 0 && resultIndex < currentSearchResults.length) {
+            const video = currentSearchResults[resultIndex];
+            addToQueue(video);
+            showToast(`Added "${video.title}" to queue`);
+        } else {
+            showToast("Invalid number. Please choose a valid search result.");
+        }
+        return; // Stop further processing
+    }
+
+    // Handle other commands or fall back to search
+    performSearch(transcript);
+}
+
+// New direct search function
+async function performSearch(query, name = null) {
+    toggleLoading(true);
+    try {
+        const results = await searchYouTube(query);
+        displayResults(results, 'Search Results', name); // Pass name for tagging
+    } catch (error) {
+        console.error('Search error:', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+
+function findBestVoiceMatch(transcript) {
+    // Simple confidence-based matching (replace with proper audio analysis in real system)
+    const names = Object.keys(voiceProfiles);
+    let bestMatch = {name: null, score: 0};
+    
+    names.forEach(name => {
+        const score = calculateSimilarity(transcript, name);
+        if (score > bestMatch.score) {
+            bestMatch = {name, score};
+        }
+    });
+    
+    return bestMatch.score > 0.7 ? bestMatch.name : null;
+}
+
+function calculateSimilarity(input, name) {
+    // Simple text similarity check (would use voice features in real implementation)
+    const inputLower = input.toLowerCase();
+    const nameLower = name.toLowerCase();
+    
+    if (inputLower.includes(nameLower)) return 1.0;
+    return 0; // Replace with actual voice analysis
+}
+
+function updateUserPills() {
+    const container = document.getElementById('user-profiles');
+    container.innerHTML = '';
+    
+    Object.keys(voiceProfiles).forEach(name => {
+        const pill = document.createElement('div');
+        pill.className = 'name-pill';
+        pill.style.backgroundColor = voiceProfiles[name].color;
+        pill.textContent = name;
+        pill.onclick = () => deleteUser(name);
+        container.appendChild(pill);
+    });
+}
+
+function deleteUser(name) {
+    delete voiceProfiles[name];
+    localStorage.setItem('voiceProfiles', JSON.stringify(voiceProfiles));
+    updateUserPills();
+    showToast(`${name} profile removed`);
+}
+
+// Initialize profiles on load
+updateUserPills();
+
+// Add voice profile functions
+function handleVoiceRegistration(name, confidence) {
+    if (Object.keys(voiceProfiles).length >= MAX_USERS) {
+        showToast('Maximum user limit reached');
+        return;
+    }
+    
+    voiceProfiles[name] = {
+        lastUsed: Date.now(),
+        confidence: confidence,
+        color: getColorForName(name)
+    };
+    
+    localStorage.setItem('voiceProfiles', JSON.stringify(voiceProfiles));
+    showToast(`Voice profile created for ${name}!`);
+    updateUserPills();
 }
 
 // Add new cleanup function
@@ -665,14 +1303,10 @@ function cleanupVoiceSearch() {
     // Remove hidden audio elements
     document.querySelectorAll('audio[data-voice-audio]').forEach(el => el.remove());
     
-    // Restore playback state
+    // Restore playback state immediately
     if (wasPlaying) {
-        resumeTimeout = setTimeout(() => {
-            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
-                player.playVideo();
-                showToast('Resuming playback...');
-            }
-        }, getResumeDelay());
+        player.playVideo();
+        showToast('Resuming playback...');
     }
 }
 
@@ -814,7 +1448,7 @@ async function handlePlaybackError() {
             toast.style.position = 'fixed';
             toast.style.bottom = '20px';
             toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
+            toast.style.transform = 'translateX(-50%';
             toast.style.backgroundColor = '#333';
             toast.style.color = '#fff';
             toast.style.padding = '15px 20px';
@@ -826,7 +1460,63 @@ async function handlePlaybackError() {
             setTimeout(() => toast.remove(), duration);
         }
 
-        // Initialization
+function saveQueueToLocalStorage() {
+    localStorage.setItem('videoQueue', JSON.stringify(queue));
+}
+
+function restoreQueueFromLocalStorage() {
+    const savedQueue = localStorage.getItem('videoQueue');
+    if (savedQueue) {
+        queue = JSON.parse(savedQueue);
+        updateQueueDisplay();
+    }
+}
+
+// Modify addToQueue function
+function addToQueue(video, name = null) {
+    if (!queue.some(v => v.videoId === video.videoId)) {
+        queue.push({ ...video, name });
+        addedVideoIds.add(video.videoId);
+        updateQueueDisplay();
+        showToast(`"${video.title}" added to queue`);
+        saveQueueToLocalStorage();
+        
+        // Remove the video from search results
+        const resultItem = document.querySelector(`[data-video-id="${video.videoId}"]`);
+        if (resultItem) {
+            resultItem.remove();
+        }
+
+        // Check if this is the only video in the queue
+        if (queue.length === 1) {
+            playVideo(video); // Play the video immediately if it's the only one
+        }
+
+        // Other existing code...
+    }
+}
+
+// Modify removeFromQueue function
+function removeFromQueue(index) {
+    if (index === 0 && queue.length > 0) {
+        queue.shift();
+        if (queue.length > 0) {
+            playVideo(queue[0]);
+        } else {
+            currentVideo = null;
+            showSuggestions();
+        }
+    } else {
+        queue.splice(index, 1);
+    }
+    updateQueueDisplay();
+    saveQueueToLocalStorage(); // Save to localStorage
+}
+
+// Call restore function on page load
+document.addEventListener('DOMContentLoaded', () => {
+    restoreQueueFromLocalStorage();
+});
         initializeVoiceSearch();
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";

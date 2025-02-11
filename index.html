@@ -358,7 +358,7 @@ async function searchYouTube(query, options = {}) {
 }
 
 async function fetchYouTubeVideos(processedQuery, excludeIds = []) {
-    const response = await fetch('/.netlify/functions-internal/youtube-proxy', {
+    const response = await fetch('/netlify/functions/youtube-proxy', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

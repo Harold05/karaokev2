@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.5.2</title>
+    <title>Karaoke Player Pro v4.5.3</title>
     <style>
 
 /* Add to CSS */
@@ -642,7 +642,7 @@ window.addEventListener('resize', alignQueuePanel);
             handlePlaybackError();
         }
 
-        function initializeVoiceCommandHints() {
+function initializeVoiceCommandHints() {
     const defaultHints = [
         'Perform Search: Say anything like "Play Adele songs."',
         'To reserve a song on result list: Say "Reserve first", "Reserve second," or "Reserve third."',
@@ -711,7 +711,7 @@ async function updateVoiceCommandHints(songTitle, artistName) {
             hintContainer.textContent = combinedHints[currentIndex];
             currentIndex = (currentIndex + 1) % combinedHints.length;
         }
-    }, 5000); // Change hint every 5 seconds
+    }, 10000); // Change hint every 5 seconds
 }
 
 
@@ -964,6 +964,11 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
             if (suggestionElement) {
                 suggestionElement.remove();
             }
+
+            // Fetch and update voice command hints with song facts
+            const facts = await getSongFacts(title, artist);
+            const voiceHintsController = initializeVoiceCommandHints();
+            voiceHintsController.updateHints(facts);
         } else {
             showToast('No karaoke version found for the selected suggestion.');
         }
@@ -972,6 +977,7 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
         showToast('Failed to process the suggestion. Please try again.');
     }
 }
+
 
 
         async function getAISongSuggestions(queue) {
@@ -1539,7 +1545,7 @@ function onPlayerReady(event) {
             retryCount = 0;
             currentVideo = video;
             player.loadVideoById(video.videoId);
-            await updateVoiceCommandHints(video.title, video.channel);
+           // await updateVoiceCommandHints(video.title, video.channel);
         }
 
             // Add cleanup function

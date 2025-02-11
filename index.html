@@ -847,11 +847,48 @@ function displayAISuggestions({ header, suggestions }) {
     container.innerHTML = `
         <div class="suggestion-header">${header}</div>
         ${suggestions.map((suggestion, index) => `
-            <div class="search-result" tabindex="0" id="ai-suggestion-${index}">
+            <div 
+                class="search-result" 
+                tabindex="0" 
+                id="ai-suggestion-${index}" 
+                data-suggestion="${suggestion}">
                 <div class="text-content">${suggestion}</div>
             </div>
         `).join('')}
     `;
+
+    // Add click event listeners to AI suggestions
+    suggestions.forEach((suggestion, index) => {
+        const suggestionElement = document.getElementById(`ai-suggestion-${index}`);
+        suggestionElement.addEventListener('click', async () => {
+            await handleAISuggestionClick(suggestion);
+        });
+    });
+}
+
+async function handleAISuggestionClick(suggestion) {
+    try {
+        // Split the suggestion into title and artist
+        const [title, artist] = suggestion.split(' - ').map(str => str.trim());
+
+        // Construct the search query
+        const query = `${title} ${artist} karaoke`;
+
+        // Search YouTube for the suggestion
+        const results = await searchYouTube(query);
+
+        if (results.length > 0) {
+            // Add the first result to the queue
+            const firstResult = results[0];
+            addToQueue(firstResult);
+            showToast(`"${firstResult.title}" added to queue!`);
+        } else {
+            showToast('No results found for the selected suggestion.');
+        }
+    } catch (error) {
+        console.error('Error handling AI suggestion click:', error);
+        showToast('Failed to process the suggestion. Please try again.');
+    }
 }
 
 

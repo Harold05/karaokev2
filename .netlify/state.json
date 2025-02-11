@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "General Mariano Alvarez",
+			"country": {
+				"code": "PH",
+				"name": "Philippines"
+			},
+			"subdivision": {
+				"code": "40",
+				"name": "Calabarzon"
+			},
+			"timezone": "Asia/Manila",
+			"latitude": 14.2591,
+			"longitude": 120.8618,
+			"postalCode": "4117"
+		},
+		"timestamp": 1739255981607
+	}
+}

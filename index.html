@@ -522,7 +522,6 @@
     </div>
 
     <script>
-        const YT_API_KEYS = ['AIzaSyBw8YJYBsq2wBHafYpAUhncN98Mg7YYmRM', 'AIzaSyBfjtDjII62pyMRA6_Nx66gPkNk8ORg4Z0', 'AIzaSyDqHQFWXmYB2PzHzTq8enfm16cnalljKE0', 'AIzaSyDAuiTHj5zY6rh0TSzmDcKGoDmjNDlAEbI'];
         let currentKeyIndex = 0; // Initialize the index to track the current key
         let player;
         let queue = [];
@@ -862,28 +861,6 @@ function addToQueue(video, name = null) {
             displayResults(suggestions.slice(0, 5), suggestionHeader);
         } catch (error) {
             console.error('Suggestions error:', error);
-        }
-    }
-
-    // Modified search function with cache busting
-    async function getSuggestedVideos() {
-        try {
-            if (!currentVideo) return [];
-            
-            const response = await fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3` +
-                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${YT_API_KEY}&cache=${Date.now()}`
-            );
-            
-            const data = await response.json();
-            return processVideoResults(data.items).filter(video => 
-                !video.title.toLowerCase().includes('original') &&
-                (video.title.toLowerCase().includes('karaoke') ||
-                video.title.toLowerCase().includes('lyrics'))
-            );
-        } catch (error) {
-            console.error('Suggestions fetch failed:', error);
-            return [];
         }
     }
 

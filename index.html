@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.4.1</title>
+    <title>Karaoke Player Pro v4.4.2</title>
     <style>
 
 /* Add to CSS */
@@ -732,9 +732,7 @@ async function searchYouTube(query, options = {}) {
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         ); */
-        if (excludeIds.length > 5) {
-            excludeIds = []; // Reset the excluded ids if their length exceeds 5
-        }
+
         let ytresponse = await fetchYouTubeVideos(processedQuery, excludeIds);
 
         return processVideoResults(ytresponse.items);

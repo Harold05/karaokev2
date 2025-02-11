@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.3.1</title>
+    <title>Karaoke Player Pro v4.3.2</title>
     <style>
 
 /* Add to CSS */
@@ -820,21 +820,26 @@ function addToQueue(video, name = null) {
 }
 
 async function playNextVideo() {
+    // Shift the current video out of the queue if it exists
     if (queue.length > 0) {
-        // Move the current video to history and play the next one
         queue.shift();
         updateQueueDisplay();
     }
 
-    if (queue.length > 1) {
+    // Play the next video if available
+    if (queue.length > 0) {
         await playVideo(queue[0]);
     } else {
         currentVideo = null;
-        // Fetch AI song suggestions when the queue is empty
-        const aiSuggestions = await getAISongSuggestions(queue.map(video => `${video.title} - ${video.channel}`));
-        displayAISuggestions(aiSuggestions);
     }
+
+    // Trigger AI song suggestions
+    const aiSuggestions = await getAISongSuggestions(
+        queue.map(video => `${video.title} - ${video.channel}`)
+    );
+    displayAISuggestions(aiSuggestions);
 }
+
 
 // Function to display AI suggestions in the UI
 function displayAISuggestions(suggestions) {

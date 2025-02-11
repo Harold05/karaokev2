@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-export async function handler(event) {
+exports.handler = async (event) => {
     try {
         console.log('Function triggered:', event.body);
 
@@ -18,7 +18,7 @@ export async function handler(event) {
             body: JSON.stringify({
                 model: 'gpt-4o-mini',
                 messages: [{ role: 'system', content: prompt }],
-                max_tokens: 200, // Increased to accommodate both the header and suggestions
+                max_tokens: 200, // Accommodate both header and suggestions
             }),
         });
 
@@ -31,8 +31,13 @@ export async function handler(event) {
         const data = await response.json();
         console.log('OpenAI response data:', data);
 
+        // Parse response into header and suggestions
         const [header, ...suggestions] = data.choices[0].message.content.trim().split('\n');
-        const cleanedSuggestions = suggestions.map(suggestion => suggestion.replace(/^\*\*\s*|\s*\*\*$/g, '').trim()); // Remove **
+
+        // Remove `**` or other unwanted characters from suggestions
+        const cleanedSuggestions = suggestions.map(suggestion =>
+            suggestion.replace(/^\*\*\s*|\s*\*\*$/g, '').trim()
+        );
 
         return {
             statusCode: 200,
@@ -45,4 +50,4 @@ export async function handler(event) {
             body: JSON.stringify({ error: 'Failed to fetch AI song suggestions' }),
         };
     }
-}
+};

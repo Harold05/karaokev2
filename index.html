@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.3.5</title>
+    <title>Karaoke Player Pro v4.4.0</title>
     <style>
 
 /* Add to CSS */
@@ -861,12 +861,13 @@ function displayAISuggestions({ header, suggestions }) {
     suggestions.forEach((suggestion, index) => {
         const suggestionElement = document.getElementById(`ai-suggestion-${index}`);
         suggestionElement.addEventListener('click', async () => {
-            await handleAISuggestionClick(suggestion);
+            await handleAISuggestionClick(suggestion, suggestionElement);
         });
     });
 }
 
-async function handleAISuggestionClick(suggestion) {
+
+async function handleAISuggestionClick(suggestion, suggestionElement) {
     try {
         // Split the suggestion into title and artist
         const [title, artist] = suggestion.split(' - ').map(str => str.trim());
@@ -882,6 +883,11 @@ async function handleAISuggestionClick(suggestion) {
             const firstResult = results[0];
             addToQueue(firstResult);
             showToast(`"${firstResult.title}" added to queue!`);
+
+            // Remove the clicked suggestion from the list
+            if (suggestionElement) {
+                suggestionElement.remove();
+            }
         } else {
             showToast('No results found for the selected suggestion.');
         }

@@ -7,7 +7,7 @@ exports.handler = async (event) => {
         const { queue } = JSON.parse(event.body);
         console.log('Queue received:', queue);
 
-        const prompt = `Based on the following queued songs, suggest 3 karaoke songs and provide a dynamic response header (max 10-20 words):\n${queue.join('\n')}\n suggested list format is Song Title - Artist Name`;
+        const prompt = `Based on the following queued songs, suggest 5 karaoke songs and provide a dynamic response header (max 10-20 words):\n${queue.join('\n')}\n suggested list format is Song Title - Artist Name`;
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',

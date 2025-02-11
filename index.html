@@ -835,7 +835,7 @@ async function playNextVideo() {
 
     // Trigger AI song suggestions
     const aiSuggestions = await getAISongSuggestions(
-        queue.map(video => `${video.title} - ${video.channel}`)
+        queue.map(video => `${video.title}`)
     );
     displayAISuggestions(aiSuggestions);
 }

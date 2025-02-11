@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.4.2</title>
+    <title>Karaoke Player Pro v4.4.3</title>
     <style>
 
 /* Add to CSS */
@@ -530,8 +530,8 @@
         const MAX_RETRIES = 2;
         const MAX_USERS = 5;
         // Add these constants at the top
-        const MAX_SINGLE_RETRIES = 2; // Max replacements per video
-        const MAX_TOTAL_RETRIES = 5;  // Max total replacement attempts
+        const MAX_SINGLE_RETRIES = 3; // Max replacements per video
+        const MAX_TOTAL_RETRIES = 10;  // Max total replacement attempts
         const FAILED_VIDEO_TTL = 300000; // 5 minutes cache
 
         // Add this at the top with other constants
@@ -645,7 +645,7 @@ window.addEventListener('resize', alignQueuePanel);
         function initializeVoiceCommandHints() {
     const hints = [
         'Perform Search: Say anything like "Play Adele songs."',
-        'You can Add Result to Queue: Say "Add first result", "Add second result," or "Add third result."',
+        'You can Add Result to Queue: Say "Reserve first", "Reserve second," or "Reserve third."',
         'Tag search results to your name: Say like "Bruno Mars Song tag as [Name]" to associate a name with the search results.',
     ];
 

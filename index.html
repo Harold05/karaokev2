@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Player Pro v4.1.1 </title>
+    <title>Karaoke Player Pro v4.1.2 </title>
     <style>
 
 .queue-item {
@@ -469,12 +469,14 @@ async function handleUnavailableVideo(errorIndex) {
                 // Get suggestions based on recent history
                 const recentTitles = searchHistory.map(v => v.title).join(' ');
                 const extractedArtist = recentTitles.split(" - ")[1] || "";
-                const response = await fetch(
+                /* const response = await fetch(
                     `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5` +
                     `&q=${encodeURIComponent(extractedArtist + ' karaoke')}&type=video&key=${apiKey}&cache=${Date.now()}`
-                );
-                const data = await response.json();
-                suggestions = processVideoResults(data.items);
+                ); */
+                let ytresponse = await fetchYouTubeVideos(extractedArtist);
+
+                //const data = await response.json();
+                suggestions = processVideoResults(ytresponse.items);
                 suggestionHeader = 'Based on Recent Songs';
             }
 
@@ -493,28 +495,6 @@ async function handleUnavailableVideo(errorIndex) {
             displayResults(suggestions.slice(0, 5), suggestionHeader);
         } catch (error) {
             console.error('Suggestions error:', error);
-        }
-    }
-
-    // Modified search function with cache busting
-    async function getSuggestedVideos() {
-        try {
-            if (!currentVideo) return [];
-            
-            const response = await fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5` +
-                `&type=video&relatedToVideoId=${currentVideo.videoId}&key=${YT_API_KEY}&cache=${Date.now()}`
-            );
-            
-            const data = await response.json();
-            return processVideoResults(data.items).filter(video => 
-                !video.title.toLowerCase().includes('original') &&
-                (video.title.toLowerCase().includes('karaoke') ||
-                video.title.toLowerCase().includes('lyrics'))
-            );
-        } catch (error) {
-            console.error('Suggestions fetch failed:', error);
-            return [];
         }
     }
 

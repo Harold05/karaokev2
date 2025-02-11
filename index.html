@@ -347,7 +347,7 @@ async function searchYouTube(query, options = {}) {
             `&cache=${Date.now()}` +
             (excludeIds.length > 0 ? `&excludedIds=${excludeIds.join(',')}` : '')
         ); */
-        let ytresponse = fetchYouTubeVideos(processedQuery, excludeIds);
+        let ytresponse = await fetchYouTubeVideos(processedQuery, excludeIds);
 
         const data = await ytresponse.json();
         return processVideoResults(data.items);
@@ -358,7 +358,7 @@ async function searchYouTube(query, options = {}) {
 }
 
 async function fetchYouTubeVideos(processedQuery, excludeIds = []) {
-    const response = await fetch('/netlify/functions/youtube-proxy', {
+    const response = await fetch('/.netlify/functions-internal/youtube-proxy', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

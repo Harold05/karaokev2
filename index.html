@@ -645,7 +645,7 @@ window.addEventListener('resize', alignQueuePanel);
         function initializeVoiceCommandHints() {
     const hints = [
         'Perform Search: Say anything like "Play Adele songs."',
-        'You can Add Result to Queue: Say "Reserve first", "Reserve second," or "Reserve third."',
+        'To reserve a song on result list: Say "Reserve first", "Reserve second," or "Reserve third."',
         'Tag search results to your name: Say like "Bruno Mars Song tag as [Name]" to associate a name with the search results.',
     ];
 
@@ -1525,7 +1525,7 @@ async function handlePlaybackError() {
         function showToast(message, duration = 3000) {
             const toast = document.createElement('div');
             toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
+            toast.style.bottom = '50px';
             toast.style.left = '50%';
             toast.style.transform = 'translateX(-50%';
             toast.style.backgroundColor = '#333';

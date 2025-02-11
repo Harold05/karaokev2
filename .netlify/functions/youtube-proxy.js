@@ -1,7 +1,21 @@
 const axios = require('axios');
 
+const YT_API_KEYS = [
+    process.env.YT_API_KEY1,
+    process.env.YT_API_KEY2,
+    process.env.YT_API_KEY3,
+    process.env.YT_API_KEY4
+];
+let currentKeyIndex = 0;
+
+function getNextApiKey() {
+    const key = YT_API_KEYS[currentKeyIndex];
+    currentKeyIndex = (currentKeyIndex + 1) % YT_API_KEYS.length; // Rotate index
+    return key;
+}
+
 exports.handler = async (event) => {
-    const API_KEY = process.env.YOUTUBE_API_KEY; // Use the environment variable for the API key
+    const API_KEY = getNextApiKey(); // Use the rotating API key function
 
     // Parse the request body
     let { processedQuery, excludeIds = [] } = JSON.parse(event.body || '{}');

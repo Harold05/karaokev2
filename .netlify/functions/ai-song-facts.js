@@ -8,7 +8,7 @@ exports.handler = async (event) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${process.env.OPEN_AI_KEY}`,
+                Authorization: `Bearer ${process.env.OPEN_AI_KEY2}`,
             },
             body: JSON.stringify({
                 model: 'gpt-4o-mini',

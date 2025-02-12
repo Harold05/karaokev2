@@ -534,6 +534,8 @@
         const MAX_TOTAL_RETRIES = 10;  // Max total replacement attempts
         const FAILED_VIDEO_TTL = 300000; // 5 minutes cache
 
+        let voiceHintsController = null;
+
         // Add this at the top with other constants
         const SEARCH_RESULT_TTL = 300000; // 5 minutes
 
@@ -956,7 +958,8 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
 
         if (karaokeResults.length > 0) {
             // Add the first karaoke result to the queue
-            const firstResult = karaokeResults[0];
+            //const firstResult = karaokeResults[0];
+            const firstResult = { ...karaokeResults[0], isAISuggested: true, artist };
             addToQueue(firstResult);
             showToast(`"${firstResult.title}" added to queue!`);
 
@@ -965,10 +968,6 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
                 suggestionElement.remove();
             }
 
-            // Fetch and update voice command hints with song facts
-            const facts = await getSongFacts(title, artist);
-            const voiceHintsController = initializeVoiceCommandHints();
-            voiceHintsController.updateHints(facts);
         } else {
             showToast('No karaoke version found for the selected suggestion.');
         }
@@ -1546,6 +1545,31 @@ function onPlayerReady(event) {
             currentVideo = video;
             player.loadVideoById(video.videoId);
            // await updateVoiceCommandHints(video.title, video.channel);
+
+            if (!voiceHintsController) {
+                voiceHintsController = initializeVoiceCommandHints();
+            }
+        
+            // Reset hints to default initially
+            voiceHintsController.updateHints([]);
+        
+            // Delay fetching "DID YOU KNOW?" facts for AI-suggested videos
+            if (video.isAISuggested) {
+                setTimeout(async () => {
+                    const facts = await getSongFacts(video.title, video.artist);
+                    voiceHintsController.updateHints(facts);
+                }, 30000); // Delay by 30 seconds
+            }
+
+
+            // Hook to clean up hints when the video ends
+            player.addEventListener('onStateChange', (event) => {
+                if (event.data === YT.PlayerState.ENDED) {
+                    // Clear "DID YOU KNOW?" hints and reset to default
+                    voiceHintsController.updateHints([]);
+                    playNextVideo(); // Optionally play the next video
+                }
+            });
         }
 
             // Add cleanup function

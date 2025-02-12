@@ -749,7 +749,7 @@ async function getSongFacts(songTitle, artistName) {
 
 
 // Initialize the hints when the page loads
-//document.addEventListener('DOMContentLoaded', initializeVoiceCommandHints);
+document.addEventListener('DOMContentLoaded', initializeVoiceCommandHints);
 
 
         /* // Search Functionality
@@ -958,8 +958,8 @@ async function handleAISuggestionClick(suggestion, suggestionElement) {
 
         if (karaokeResults.length > 0) {
             // Add the first karaoke result to the queue
-            //const firstResult = karaokeResults[0];
-            const firstResult = { ...karaokeResults[0], isAISuggested: true, artist };
+            const firstResult = karaokeResults[0];
+            //const firstResult = { ...karaokeResults[0], isAISuggested: true, artist };
             addToQueue(firstResult);
             showToast(`"${firstResult.title}" added to queue!`);
 
@@ -1546,30 +1546,6 @@ function onPlayerReady(event) {
             player.loadVideoById(video.videoId);
            // await updateVoiceCommandHints(video.title, video.channel);
 
-            if (!voiceHintsController) {
-                voiceHintsController = initializeVoiceCommandHints();
-            }
-        
-            // Reset hints to default initially
-            voiceHintsController.updateHints([]);
-        
-            // Delay fetching "DID YOU KNOW?" facts for AI-suggested videos
-            if (video.isAISuggested) {
-                setTimeout(async () => {
-                    const facts = await getSongFacts(video.title, video.artist);
-                    voiceHintsController.updateHints(facts);
-                }, 30000); // Delay by 30 seconds
-            }
-
-
-            // Hook to clean up hints when the video ends
-            player.addEventListener('onStateChange', (event) => {
-                if (event.data === YT.PlayerState.ENDED) {
-                    // Clear "DID YOU KNOW?" hints and reset to default
-                    voiceHintsController.updateHints([]);
-                    playNextVideo(); // Optionally play the next video
-                }
-            });
         }
 
             // Add cleanup function
